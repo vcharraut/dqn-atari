@@ -65,6 +65,8 @@ class DQN_Breakout():
 								hidden_layer=hidden_layer,
 								out_dim=self.env.action_space.n)
 
+		print(self.q_nn)
+
 		# Dense neural network to compute the q-target
 		self.q_target_nn = Conv2d_nn(in_dim=self.env.observation_space.shape[0], 
 								hidden_layer=hidden_layer,
@@ -96,7 +98,9 @@ class DQN_Breakout():
 	def qvalue(self, state):
 		x = torch.from_numpy(state).float()
 		x = x.to(torch.device('cuda'))
-		return self.q_nn(x).argmax().item()
+		ac = self.q_nn(x)
+		print(ac.shape)
+		return ac.argmax().item()
 
 
 	"""
@@ -184,12 +188,13 @@ class DQN_Breakout():
 		for _ in range(EPISODE_WARMUP):
 			# Run one episode until termination
 			while not done:
+				self.env.render()
 				# Take one random action
 				action = self.env.action_space.sample()
 
 				# Get the output of env from this action
 				next_state, reward, done, info = self.env.step(action)
-
+				print(action, reward, done)
 				# Add the output to the memory
 				self.memory.add(state, action, next_state, reward, done)
 				state = next_state
@@ -203,8 +208,7 @@ class DQN_Breakout():
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
-		sum_reward, step, mean = 0, 0, 0
-		mean_reward = []
+		step = 0
 		done = False
 
 		state = self.env.reset()
@@ -222,7 +226,6 @@ class DQN_Breakout():
 				next_state, reward, done, info = self.env.step(action)
 
 				# Update the values for the log
-				sum_reward += reward
 				step += 1
 
 				# Add the output to the memory
@@ -236,16 +239,15 @@ class DQN_Breakout():
 
 				state = next_state
 
-			self.log("[{}/{}], r:{}, avg:{}, loss:{}, eps:{}".format(
-					t, EPISODE_LEARN, sum_reward, mean, loss, round(eps, 3)))
-			print("[{}/{}], r:{}, avg:{}, loss:{}, eps:{}".format(
-					t, EPISODE_LEARN, sum_reward, mean, loss, round(eps, 3)))
+			print("[{}/{}], step:{}, r:{}, avg:{}, loss:{}, eps:{}".format(
+					t, EPISODE_LEARN, step, reward, loss, round(eps, 3)))
+			print("[{}/{}], step:{}, r:{}, avg:{}, loss:{}, eps:{}".format(
+					t, EPISODE_LEARN, step, reward, loss, round(eps, 3)))
 				
 			
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward_train.append(sum_reward)
-			sum_reward = 0
+			self.plot_reward_train.append(reward)
 			done = False
 
 		self.episode_done = t
@@ -258,7 +260,6 @@ class DQN_Breakout():
 	(Solved : Mean Reward => 475)
 	"""
 	def play(self, display=True):
-		sum_reward = 0
 		done = False
 		state = self.env.reset()
 
@@ -275,11 +276,10 @@ class DQN_Breakout():
 				state, reward, done, _ = self.env.step(action)
 
 				# Update the values for the log
-				sum_reward += reward
 
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward_play.append(sum_reward)
+			self.plot_reward_play.append(reward)
 			sum_reward = 0
 			done = False
 

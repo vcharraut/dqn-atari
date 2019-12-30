@@ -10,13 +10,17 @@ class Dense_nn(nn.Module):
 		super(Dense_nn, self).__init__()
 		
 		self.fc1 = nn.Linear(in_dim, hidden_layer)
+		# self.bn1 = nn.BatchNorm2d(hidden_layer)
 		self.fc2 = nn.Linear(hidden_layer, hidden_layer)
+		# self.bn2 = nn.BatchNorm2d(hidden_layer)
 		self.fc3 = nn.Linear(hidden_layer, out_dim)
 			
 
 	def forward(self, x):
+		# x = self.bn1(self.fc1(x))
 		x = self.fc1(x)
 		x = F.relu(x)
+		# x = self.bn2(self.fc2(x))
 		x = self.fc2(x)
 		x = F.relu(x)
 		return self.fc3(x)

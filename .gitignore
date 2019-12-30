@@ -1,4 +1,5 @@
-./build/
-./dist/
-./DRL.egg-ingo/
-run.py
+build/
+dist/
+DRL.egg-info/
+.vscode/
+

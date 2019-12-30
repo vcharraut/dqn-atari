@@ -48,27 +48,6 @@ class MaxAndSkipEnv(Wrapper):
         self._obs_buffer.append(obs)
         return obs
 
-
-class FireResetEnv(Wrapper):
-    def __init__(self, env):
-        Wrapper.__init__(self, env)
-        if len(env.unwrapped.get_action_meanings()) < 3:
-            raise ValueError('Expected an action space of at least 3!')
-
-    def reset(self, **kwargs):
-        self.env.reset(**kwargs)
-        obs, _, done, _ = self.env.step(1)
-        if done:
-            self.env.reset(**kwargs)
-        obs, _, done, _ = self.env.step(2)
-        if done:
-            self.env.reset(**kwargs)
-        return obs
-
-    def step(self, action):
-        return self.env.step(action)
-
-
 class FrameBuffer(ObservationWrapper):
     def __init__(self, env, num_steps, dtype=np.float32):
         super(FrameBuffer, self).__init__(env)
@@ -110,15 +89,6 @@ class NormalizeFloats(ObservationWrapper):
 def BreakoutWrapper(environment):
     env = make(environment)
     env = MaxAndSkipEnv(env)
-    try:
-        if 'FIRE' in env.unwrapped.get_action_meanings():
-            env = FireResetEnv(env)
-    except AttributeError:
-        # Some environments, such as the classic control environments, don't
-        # have a get_action_meanings method. Since these environments don't
-        # contain a 'FIRE' action, this wrapper is irrelevant and can be safely
-        # ignored if the attribute doesn't exist.
-        pass
     env = FrameDownsample(env)
     env = ImageToPyTorch(env)
     env = FrameBuffer(env, 4)
