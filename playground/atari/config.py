@@ -1,6 +1,6 @@
 # Hyperparameters used for the training
 # memory_capacity = 100000
-# num_episodes    = 10000
+# num_episodes    = 100000
 # batch_size      = 32
 # target_update   = 10000
 # start_learning  = 50000
@@ -15,7 +15,7 @@ class Config():
 
 	def __init__(self,
 				memory_capacity=100000,
-				num_episodes=10000,
+				num_episodes=100000,
 				batch_size=32,
 				target_update=10000, 
 				start_learning=50000,

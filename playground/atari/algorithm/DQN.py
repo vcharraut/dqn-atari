@@ -217,7 +217,7 @@ class DQN():
 	"""
 	Plot the rewards during the training.
 	"""
-	def figure(self, training):
+	def figure(self):
 
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
 		window = 30
