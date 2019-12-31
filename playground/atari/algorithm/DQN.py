@@ -4,6 +4,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
+import time
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
@@ -154,6 +155,7 @@ class DQN():
 			episode_reward = 0.0
 			done = False
 			state = self.env.reset()
+			start_time = time.time()
 
 			# Run one episode until termination
 			while not done:
@@ -186,13 +188,23 @@ class DQN():
 				episode_reward += r
 
 
-			self.log("[{}/{}], step:{}, r:{}, eps:{}".format(
-					t, self.num_episodes, step, episode_reward, round(eps, 3)))
+	
+			self.log("[{}/{}] -- step:{} -- reward:{} -- eps:{} -- time:{}".format(
+					t,
+					self.num_episodes,
+					step,
+					episode_reward,
+					round(eps, 3),
+					round(time.time() - start_time, 4)))
 
 			if not t % 10:
 				mean_reward = sum(self.plot_reward[-10:]) / 10
-				print("[{}/{}] -- step:{} -- avg_reward:{} -- eps:{}".format(
-					t, self.num_episodes, step, mean_reward, round(eps, 3)))
+				print("[{}/{}] -- step:{} -- avg_reward:{} -- eps:{} -- time:{}".format(
+					t,
+					self.num_episodes,
+					step, mean_reward,
+					round(eps, 3),
+					round(time.time() - start_time, 4)))
 
 			# Update the log and reset the env and variables
 			self.env.reset()
