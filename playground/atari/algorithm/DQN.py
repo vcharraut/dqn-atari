@@ -146,15 +146,16 @@ class DQN():
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
-		step = 0
-		tmp = 0.0
-		done = False
-
-		state = self.env.reset()
+		step, previous_live = 0, 5
+	
+		
 
 		for t in range(self.num_episodes + 1):
+			episode_reward = 0.0
+			done = False
+			state = self.env.reset()
+
 			# Run one episode until termination
-			reward = -99
 			while not done:
 				if display:
 					self.env.render()
@@ -163,11 +164,13 @@ class DQN():
 				action, eps = self.act(state, step)
 
 				# Get the output of env from this action
-				next_state, r, done, _ = self.env.step(action)
-				
-				if r > reward:
-					reward = r
+				next_state, r, _, live = self.env.step(action)
 
+				# End the episode when the agent loses a life
+				if previous_live is not live['ale.lives']:
+					previous_live = live['ale.lives']
+					done = True
+				
 				# Push the output to the memory
 				self.memory.push(state, action, next_state, r, done)
 
@@ -180,17 +183,20 @@ class DQN():
 
 				step += 1
 				state = next_state
+				episode_reward += r
+
 
 			self.log("[{}/{}], step:{}, r:{}, eps:{}".format(
-					t, self.num_episodes, step, reward, round(eps, 3)))
+					t, self.num_episodes, step, episode_reward, round(eps, 3)))
 
 			if not t % 10:
-				print("[{}/{}], step:{}, r:{}, eps:{}".format(
-					t, self.num_episodes, step, reward, round(eps, 3)))
+				mean_reward = sum(self.plot_reward[-10:]) / 10
+				print("[{}/{}] -- step:{} -- avg_reward:{} -- eps:{}".format(
+					t, self.num_episodes, step, mean_reward, round(eps, 3)))
 
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward.append(reward)
+			self.plot_reward.append(episode_reward)
 			done = False
 
 		self.env.close()

@@ -1,3 +1,16 @@
+# Hyperparameters used for the training
+# memory_capacity = 100000
+# num_episodes    = 10000
+# batch_size      = 32
+# target_update   = 10000
+# start_learning  = 50000
+# learning_rate   = 0.00025
+# gamma           = 0.99
+# epsilon_decay   = 100000
+# epsilon_start   = 1
+# epsilon_end     = 0.1
+
+
 class Config():
 
 	def __init__(self,
