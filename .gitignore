@@ -1,5 +1,4 @@
 build/
 dist/
-DRL.egg-info/
+playground.egg-info/
 .vscode/
-
