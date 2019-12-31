@@ -173,7 +173,6 @@ class DQN():
 
 				# Learn
 				if step >= self.start_learning:
-					display = True
 					if not step % self.step_target_update:
 						self.learn(clone=True)
 					else:
