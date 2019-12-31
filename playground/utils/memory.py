@@ -1,5 +1,7 @@
 import torch
-import random
+from random import sample
+from collections import deque
+import numpy as np
 
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
@@ -8,40 +10,27 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 class ReplayMemory():
 
 	def __init__(self, capacity):
-		self.memory = []
-		self.capacity = capacity
+		self.memory = deque(maxlen=capacity)
 
 
-	def add(self, state, action, next_state, reward, end_step):
-		# If the memory is full, we delete the first element
-		if len(self.memory) > self.capacity:
-			del self.memory[0]
-
-		# Add the information to the memory
-		self.memory.append((FloatTensor([state]),
-							LongTensor([action]),
-							FloatTensor([next_state]),
-							FloatTensor([reward]),
-							FloatTensor([end_step])))
+	def push(self, state, action, next_state, reward, done):
+		self.memory.append((state, action, reward, next_state, done))
 
 
 	"""
 	Return a random sample from self.memory of len = number
 	"""
 	def sample(self, number):
-		sample = random.sample(self.memory, number)
+		batch = sample(self.memory, number)
 
 		# Unwrap the batch to get the variables
-		state, action, next_state, reward, done = zip(*sample)
+		state, action, next_state, reward, done = zip(*batch)
 
-		# Transform the variables to fit the computation
-		state = torch.stack(state).squeeze()
-		action = torch.stack(action)
-		next_state = torch.stack(next_state).squeeze()
-		reward = torch.stack(reward).squeeze()
-		done = torch.stack(done).squeeze()
-
-		return state, action, next_state, reward, done
+		return (np.array(state),
+                np.array(action),
+                np.array(reward, dtype=np.float32),
+                np.array(next_state),
+                np.array(done, dtype=np.uint8))
 
 
 	@property

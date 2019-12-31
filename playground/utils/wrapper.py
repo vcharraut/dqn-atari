@@ -9,20 +9,20 @@ from gym import make, ObservationWrapper, Wrapper
 from gym.spaces import Box
 
 def camel_to_snake_case(string):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+	s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
+	return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
 def is_atari(environment):
-    for field in ['ramDeterministic', 'ramNoFrameSkip', 'NoFrameskip',
-                  'Deterministic', 'ram']:
-        environment = environment.replace(field, '')
-    environment = re.sub(r'-v\d+', '', environment)
-    environment = camel_to_snake_case(environment)
-    if environment in ap.list_games():
-        return True
-    else:
-        return False
+	for field in ['ramDeterministic', 'ramNoFrameSkip', 'NoFrameskip',
+				  'Deterministic', 'ram']:
+		environment = environment.replace(field, '')
+	environment = re.sub(r'-v\d+', '', environment)
+	environment = camel_to_snake_case(environment)
+	if environment in ap.list_games():
+		return True
+	else:
+		return False
 
 class ClassicControl(Wrapper):
 	def __init__(self, env, atari):

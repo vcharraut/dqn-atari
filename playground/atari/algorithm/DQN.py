@@ -62,8 +62,8 @@ class DQN():
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
 		if use_cuda:
-			self.model.cuda('cuda')
-			self.qtarget.cuda('cuda')
+			self.model.cuda()
+			self.qtarget.cuda()
 			self.device = torch.device('cuda')
 
 	
@@ -100,6 +100,12 @@ class DQN():
 
 		# Get a random batch from the memory
 		state, action, next_state, rewards, done = self.memory.sample(self.bath_size)
+
+		state = torch.from_numpy(state).to(self.device)
+		action = torch.from_numpy(action).long().to(self.device).unsqueeze(-1)
+		next_state = torch.from_numpy(next_state).to(self.device)
+		rewards = torch.from_numpy(rewards).to(self.device)
+		done = torch.from_numpy(done).to(self.device)
 
 		# Q values predicted by the model 
 		pred = self.model(state).gather(1, action).squeeze()
@@ -146,12 +152,14 @@ class DQN():
 	"""
 	def train(self, display=False):
 		step = 0
+		tmp = 0.0
 		done = False
 
 		state = self.env.reset()
 
 		for t in range(self.num_episodes + 1):
 			# Run one episode until termination
+			reward = -1
 			while not done:
 				if display:
 					self.env.render()
@@ -160,13 +168,17 @@ class DQN():
 				action, eps = self.act(state, step)
 
 				# Get the output of env from this action
-				next_state, reward, done, _ = self.env.step(action)
+				next_state, r, done, _ = self.env.step(action)
+				
+				if r > reward:
+					reward = r
 
-				# Add the output to the memory
-				self.memory.add(state, action, next_state, reward, done)
+				# Push the output to the memory
+				self.memory.push(state, action, next_state, r, done)
 
 				# Learn
 				if step >= self.start_learning:
+					display = True
 					if not step % self.step_target_update:
 						self.learn(clone=True)
 					else:
@@ -174,7 +186,6 @@ class DQN():
 
 				step += 1
 				state = next_state
-
 
 			self.log("[{}/{}], step:{}, r:{}, eps:{}".format(
 					t, self.num_episodes, step, reward, round(eps, 3)))
@@ -207,6 +218,6 @@ class DQN():
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		plt.show()
+		# plt.show()
 		plt.savefig('playground/atari/fig/run1.png')
 
