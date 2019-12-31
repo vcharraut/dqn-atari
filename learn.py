@@ -6,5 +6,6 @@ config = Config()
 agent = DQN('BreakoutNoFrameskip-v4', config)
 agent.train()
 agent.figure()
+agent.save_model()
 
 

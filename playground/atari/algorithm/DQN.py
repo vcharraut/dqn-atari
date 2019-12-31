@@ -129,12 +129,7 @@ class DQN():
 	Save the model.
 	"""
 	def save_model(self):
-		path = 'DRL/cartpole/save/lr={}_hidden={}_gamma={}_batchsize={}_steptarget={}.pt'.format(
-						self.learning_rate,
-						self.hidden_layer,
-						self.gamma,
-						self.bath_size,
-						self.step_target_update)
+		path = 'playground/atari/save/model.pt'
 		torch.save(self.model.state_dict(), path)
 
 
