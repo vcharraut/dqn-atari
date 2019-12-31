@@ -154,7 +154,7 @@ class DQN():
 
 		for t in range(self.num_episodes + 1):
 			# Run one episode until termination
-			reward = -1
+			reward = -99
 			while not done:
 				if display:
 					self.env.render()
@@ -183,6 +183,10 @@ class DQN():
 				state = next_state
 
 			self.log("[{}/{}], step:{}, r:{}, eps:{}".format(
+					t, self.num_episodes, step, reward, round(eps, 3)))
+
+			if not t % 10:
+				print("[{}/{}], step:{}, r:{}, eps:{}".format(
 					t, self.num_episodes, step, reward, round(eps, 3)))
 
 			# Update the log and reset the env and variables
