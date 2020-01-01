@@ -13,9 +13,9 @@ from playground.utils.model import CNN, Dueling_CNN
 import time
 
 
-PATH_LOG = 'playground/atari/log/dqn_MSEloss_yes.txt'
-PATH_SAVE = 'playground/atari/save/dqn_MSEloss_yes.pt'
-PATH_FIG = 'playground/atari/fig/dqn_MSEloss_yes.png'
+PATH_LOG = 'playground/atari/log/dqn_MSEloss_no.txt'
+PATH_SAVE = 'playground/atari/save/dqn_MSEloss_no.pt'
+PATH_FIG = 'playground/atari/fig/dqn_MSEloss_no.png'
 
 class DQN():
 
@@ -23,7 +23,7 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq=True, dueling=True):
+	def __init__(self, env, config, doubleq=False, dueling=False):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
