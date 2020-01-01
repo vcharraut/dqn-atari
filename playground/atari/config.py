@@ -4,6 +4,7 @@
 # batch_size      = 32
 # target_update   = 10000
 # start_learning  = 50000
+# freq_learning   = 4
 # learning_rate   = 0.00025
 # gamma           = 0.99
 # epsilon_decay   = 100000
@@ -92,3 +93,22 @@ class Config():
 	@property
 	def epsilon_end(self):
 		return self._epsilon_end
+
+
+	def save_config(self, path, env):
+		with open(path, 'a') as f:
+			f.write('environment     = ' + env + '\n')
+			f.write('memory_capacity = ' + str(self.memory_capacity) + '\n')
+			f.write('num_episodes    = ' + str(self.num_episodes) + '\n')
+			f.write('batch_size      = ' + str(self.batch_size) + '\n')
+			f.write('target_update   = ' + str(self.target_update) + '\n')
+			f.write('start_learning  = ' + str(self.start_learning) + '\n')
+			f.write('freq_learning   = ' + str(self.freq_learning) + '\n')
+			f.write('learning_rate   = ' + str(self.learning_rate) + '\n')
+			f.write('gamma           = ' + str(self.gamma) + '\n')
+			f.write('epsilon_decay   = ' + str(self.epsilon_decay) + '\n')
+			f.write('epsilon_start   = ' + str(self.epsilon_start) + '\n')
+			f.write('epsilon_end     = ' + str(self.epsilon_end) + '\n')
+
+
+

@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import glob
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
@@ -13,21 +14,16 @@ from playground.utils.model import CNN, Dueling_CNN
 import time
 
 
-PATH_LOG = 'playground/atari/log/dqn_MSEloss_no.txt'
-PATH_SAVE = 'playground/atari/save/dqn_MSEloss_no.pt'
-PATH_FIG = 'playground/atari/fig/dqn_MSEloss_no.png'
-
 class DQN():
 
 	"""
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq=False, dueling=False):
+	def __init__(self, env, config, doubleq, dueling, adam, mse):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
-
 		# Parameters
 		self.gamma = config.gamma
 		self.bath_size = config.batch_size
@@ -39,7 +35,13 @@ class DQN():
 		self.num_episodes = config.num_episodes
 		self.start_learning = config.start_learning
 
+		# Architecture parameters
 		self.doubleq = doubleq
+
+		if doubleq:
+			use_doubleq = 'doubleq'
+		else:
+			use_doubleq = ''
 
 		# List to save the rewards 
 		self.plot_reward = []
@@ -48,22 +50,33 @@ class DQN():
 		self.memory = ReplayMemory(config.memory_capacity)
 		
 		if dueling:
+			use_dueling = 'dueling'
 			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
+			use_dueling = ''
 			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
 			self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
 
 		# Backpropagation function
-		self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
-		# self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-		# 									lr=config.learning_rate,
-		# 									eps=0.001,
-		# 									alpha=0.95,
-		# 									momentum=0.95)
+		if adam:
+			optim_method = 'adam'
+			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
+		else:
+			optim_method = 'rmsprop'
+			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
+		 									lr=config.learning_rate,
+		 									eps=0.001,
+		 									alpha=0.95,
+		 									momentum=0.95)
 
 		# Error function
-		self.__loss_fn = torch.nn.MSELoss()
+		if mse:
+			loss_method = 'mse'
+			self.__loss_fn = torch.nn.MSELoss()
+		else:
+			loss_method = 'huber'
+			self.__loss_fn = torch.nn.SmoothL1Loss()
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
@@ -72,7 +85,26 @@ class DQN():
 			self.qtarget.cuda()
 			self.device = torch.device('cuda')
 
+		# Path to the logs folder
+		specs = optim_method + '_' + loss_method  + '_' + use_doubleq  + '_' + use_dueling
+		# See if training has been made with this configuration
+		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn_' + specs + '*.txt')) + 1)
+
+		self.path_log = 'playground/atari/log/dqn_' + specs + '.txt'
+		self.path_save = 'playground/atari/save/dqn_' + specs + '.pt'
+		self.path_fig = 'playground/atari/fig/dqn_' + specs + '.png'
+		config.save_config('playground/atari/log/dqn_' + specs + '-config.txt', env)
+
+
+	"""
+	Get the action for the qvalue given a state
+	"""
+	def get_policy(self, state):
+		state = torch.from_numpy(state).float() \
+				.unsqueeze(0).to(self.device)
+		return self.model(state).argmax().item()
 	
+
 	"""
 	Compute the probabilty of exploration during the training
 	using a e-greedy method with a decay.
@@ -86,9 +118,8 @@ class DQN():
 		if np.random.rand() < eps_threshold:
 			return self.env.action_space.sample(), eps_threshold
 		else:
-			state = torch.from_numpy(state).float() \
-				.unsqueeze(0).to(self.device)
-			return self.model(state).argmax().item(), eps_threshold
+			
+			return self.get_policy(state), eps_threshold
 
 
 	"""
@@ -116,12 +147,13 @@ class DQN():
 		# Q values predicted by the model 
 		pred = self.model(state).gather(1, action).squeeze()
 
-		# Expected Q values are estimated from actions which gives maximum Q value
-		if self.doubleq:
-			action_by_qvalue = self.model(next_state).argmax(1).long().unsqueeze(-1).detach()
-			max_q_target = self.qtarget(next_state).gather(1, action_by_qvalue).squeeze().detach()
-		else:
-			max_q_target = self.qtarget(next_state).argmax(1).detach()
+		with torch.no_grad():
+			# Expected Q values are estimated from actions which gives maximum Q value
+			if self.doubleq:
+				action_by_qvalue = self.model(next_state).argmax(1).long().unsqueeze(-1)
+				max_q_target = self.qtarget(next_state).gather(1, action_by_qvalue).squeeze()
+			else:
+				max_q_target = self.qtarget(next_state).argmax(1)
 
 		# Apply Bellman equation
 		y = rewards + (1. - done) * self.gamma * max_q_target
@@ -139,17 +171,15 @@ class DQN():
 	Save the model.
 	"""
 	def save_model(self):
-		torch.save(self.model.state_dict(), PATH_SAVE)
+		torch.save(self.model.state_dict(), self.path_save)
 
 
 	"""
 	Write logs into a file
 	"""
 	def log(self, string):
-		with open(PATH_LOG, "a") as f:
-			f.write(string)
-			f.write("\n")
-
+		with open(self.path_log, "a") as f:
+			f.write(string + "\n")
 
 	"""
 	Run n episode to train the model.
@@ -231,7 +261,6 @@ class DQN():
 	Plot the rewards during the training.
 	"""
 	def figure(self):
-
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
 		window = 30
 		rolling_mean = pd.Series(self.plot_reward).rolling(window).mean()
@@ -247,6 +276,5 @@ class DQN():
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		# plt.show()
-		plt.savefig(PATH_FIG)
+		plt.savefig(self.path_fig)
 
