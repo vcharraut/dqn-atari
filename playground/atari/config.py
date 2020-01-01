@@ -18,7 +18,7 @@ class Config():
 				num_episodes=100000,
 				batch_size=32,
 				target_update=10000, 
-				start_learning=50000,
+				start_learning=1000,
 				learning_rate=0.00025,
 				gamma=0.99,
 				epsilon_decay=100000,

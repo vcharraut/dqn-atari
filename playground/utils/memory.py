@@ -1,6 +1,5 @@
 import torch
 from random import sample
-from collections import deque
 import numpy as np
 
 use_cuda = torch.cuda.is_available()
@@ -10,21 +9,29 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 class ReplayMemory():
 
 	def __init__(self, capacity):
-		self.memory = deque(maxlen=capacity)
+		self.memory = []
+		self.capacity = capacity
+		self.index = -1
 
 
-	def push(self, state, action, next_state, reward, done):
-		self.memory.append((state, action, reward, next_state, done))
+	def push(self, action, next_state, reward, done):
+		if len(self.memory) > self.capacity:
+			del self.memory[0]
+
+		self.index += 1
+		self.memory.append((action, next_state, reward, done, self.index))
 
 
 	"""
 	Return a random sample from self.memory of len = number
 	"""
 	def sample(self, number):
-		batch = sample(self.memory, number)
+		batch = sample(self.memory[1:], number)
 
 		# Unwrap the batch to get the variables
-		state, action, next_state, reward, done = zip(*batch)
+		action, next_state, reward, done, index = zip(*batch)
+
+		state = [self.memory[i-1][1] for i in index] 
 
 		return (np.array(state),
                 np.array(action),
