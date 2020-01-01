@@ -1,13 +1,13 @@
 # DRL-Atari
 Deep Renforcement Learning project made with Atari game. 
 
-- [x] DQN [[2]](#references)
-- [x] Double DQN [[3]](#references)
-- [ ] Prioritised Experience Replay [[4]](#references)
-- [x] Dueling Network Architecture [[5]](#references)
-- [ ] Multi-step Returns [[6]](#references)
-- [ ] Distributional RL [[7]](#references)
-- [ ] Noisy Nets [[8]](#references)
+- [x] DQN [[1]](#references)
+- [x] Double DQN [[2]](#references)
+- [ ] Prioritised Experience Replay [[3]](#references)
+- [x] Dueling Network Architecture [[4]](#references)
+- [ ] Multi-step Returns [[5]](#references)
+- [ ] Distributional RL [[6]](#references)
+- [ ] Noisy Nets [[7]](#references)
 
 ----------------
 ## Setup 
@@ -54,6 +54,5 @@ learning](https://web.stanford.edu/class/psych209/Readings/MnihEtAlHassibis15Nat
 [3] [Prioritized Experience Replay](https://arxiv.org/pdf/1511.05952.pdf)  
 [4] [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/pdf/1511.06581.pdf)  
 [5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
-[6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
-[7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
-[8] [When to Use Parametric Models in Reinforcement Learning?](https://arxiv.org/abs/1906.05243)  
+[6] [A Distributional Perspective on Reinforcement Learning]https://arxiv.org/pdf/1707.06887.pdf)  
+[7] [Noisy Networks for Exploration](https://arxiv.org/pdf/1706.10295.pdf)  
