@@ -39,7 +39,7 @@ class DQN():
 		self.doubleq = doubleq
 
 		if doubleq:
-			use_doubleq = 'doubleq'
+			use_doubleq = '_doubleq'
 		else:
 			use_doubleq = ''
 
@@ -50,7 +50,7 @@ class DQN():
 		self.memory = ReplayMemory(config.memory_capacity)
 		
 		if dueling:
-			use_dueling = 'dueling'
+			use_dueling = '_dueling'
 			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
@@ -60,10 +60,10 @@ class DQN():
 
 		# Backpropagation function
 		if adam:
-			optim_method = 'adam'
+			optim_method = '_adam'
 			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
 		else:
-			optim_method = 'rmsprop'
+			optim_method = '_rmsprop'
 			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
 		 									lr=config.learning_rate,
 		 									eps=0.001,
@@ -72,10 +72,10 @@ class DQN():
 
 		# Error function
 		if mse:
-			loss_method = 'mse'
+			loss_method = '_mse'
 			self.__loss_fn = torch.nn.MSELoss()
 		else:
-			loss_method = 'huber'
+			loss_method = '_huber'
 			self.__loss_fn = torch.nn.SmoothL1Loss()
 
 		# Make the model using the GPU if available
@@ -86,14 +86,14 @@ class DQN():
 			self.device = torch.device('cuda')
 
 		# Path to the logs folder
-		specs = optim_method + '_' + loss_method  + '_' + use_doubleq  + '_' + use_dueling
+		specs = optim_method + loss_method  +  use_doubleq  + use_dueling
 		# See if training has been made with this configuration
-		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn_' + specs + '*.txt')) + 1)
+		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn' + specs + '*.txt')) + 1)
 
-		self.path_log = 'playground/atari/log/dqn_' + specs + '.txt'
-		self.path_save = 'playground/atari/save/dqn_' + specs + '.pt'
-		self.path_fig = 'playground/atari/fig/dqn_' + specs + '.png'
-		config.save_config('playground/atari/log/dqn_' + specs + '-config.txt', env)
+		self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
+		self.path_save = 'playground/atari/save/dqn' + specs + '.pt'
+		self.path_fig = 'playground/atari/fig/dqn' + specs + '.png'
+		config.save_config('playground/atari/log/dqn' + specs + '-config.txt', env)
 
 
 	"""
