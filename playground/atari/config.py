@@ -14,11 +14,12 @@
 class Config():
 
 	def __init__(self,
-				memory_capacity=100000,
+				memory_capacity=150000,
 				num_episodes=100000,
 				batch_size=32,
 				target_update=10000, 
-				start_learning=1000,
+				start_learning=50000,
+				freq_learning=4,
 				learning_rate=0.00025,
 				gamma=0.99,
 				epsilon_decay=100000,
@@ -30,6 +31,7 @@ class Config():
 		self._batch_size = batch_size
 		self._target_update = target_update
 		self._start_learning = start_learning
+		self._freq_learning = freq_learning
 		self._learning_rate = learning_rate
 		self._gamma = gamma
 		self._epsilon_decay = epsilon_decay
@@ -60,6 +62,11 @@ class Config():
 	@property
 	def start_learning(self):
 		return self._start_learning
+
+
+	@property
+	def freq_learning(self):
+		return self._freq_learning
 
 
 	@property

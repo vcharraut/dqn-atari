@@ -8,12 +8,14 @@ import time
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
-from playground.utils.model import CNN
+from playground.utils.model import CNN, Dueling_CNN
 
 import time
 
 
-PATH_LOG = 'playground/atari/fig/log.txt'
+PATH_LOG = 'playground/atari/log/dqn1.txt'
+PATH_SAVE = 'playground/atari/save/dqn1.pt'
+PATH_FIG = 'playground/atari/fig/dqn1.png'
 
 class DQN():
 
@@ -21,7 +23,7 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config):
+	def __init__(self, env, config, doubleq=False, dueling=False):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
@@ -30,11 +32,14 @@ class DQN():
 		self.gamma = config.gamma
 		self.bath_size = config.batch_size
 		self.step_target_update = config.target_update
+		self.freq_learning = config.freq_learning
 		self.epsilon_decay = config.epsilon_decay
 		self.epsilon_start = config.epsilon_start
 		self.epsilon_end = config.epsilon_end
 		self.num_episodes = config.num_episodes
 		self.start_learning = config.start_learning
+
+		self.doubleq = doubleq
 
 		# List to save the rewards 
 		self.plot_reward = []
@@ -42,23 +47,23 @@ class DQN():
 		# Experience-Replay
 		self.memory = ReplayMemory(config.memory_capacity)
 		
-		# CNN to compute the q-values
-		self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
-
-		# CNN to compute the q-target
-		self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
+		if dueling:
+			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
+		else:
+			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
 
 		# Backpropagation function
-		# self.__optimizer = torch.optim.Adam(self.model.parameters(),
-		#									 lr=learning_rate)
-		self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-											lr=config.learning_rate,
-											eps=0.001,
-											alpha=0.95,
-											momentum=0.95)
+		self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
+		# self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
+		# 									lr=config.learning_rate,
+		# 									eps=0.001,
+		# 									alpha=0.95,
+		# 									momentum=0.95)
 
 		# Error function
-		self.__loss_fn = torch.nn.MSELoss()
+		self.__loss_fn = torch.nn.SmoothL1Loss()
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
@@ -100,7 +105,7 @@ class DQN():
 			self.qtarget.load_state_dict(self.model.state_dict())
 
 		# Get a random batch from the memory
-		state, action, rewards, next_state, done = self.memory.sample(self.bath_size)
+		state, action, next_state, rewards, done = self.memory.sample(self.bath_size)
 
 		state = torch.from_numpy(state).to(self.device)
 		action = torch.from_numpy(action).long().to(self.device).unsqueeze(-1)
@@ -112,7 +117,11 @@ class DQN():
 		pred = self.model(state).gather(1, action).squeeze()
 
 		# Expected Q values are estimated from actions which gives maximum Q value
-		max_q_target = self.qtarget(next_state).max(1).values.detach()
+		if self.doubleq:
+			action_by_qvalue = self.model(next_state).argmax(1).long().unsqueeze(-1).detach()
+			max_q_target = self.qtarget(next_state).gather(1, action_by_qvalue).squeeze().detach()
+		else:
+			max_q_target = self.qtarget(next_state).argmax(1).detach()
 
 		# Apply Bellman equation
 		y = rewards + (1. - done) * self.gamma * max_q_target
@@ -130,8 +139,7 @@ class DQN():
 	Save the model.
 	"""
 	def save_model(self):
-		path = 'playground/atari/save/model.pt'
-		torch.save(self.model.state_dict(), path)
+		torch.save(self.model.state_dict(), PATH_SAVE)
 
 
 	"""
@@ -148,6 +156,7 @@ class DQN():
 	"""
 	def train(self, display=False):
 		step, previous_live = 0, 5
+		best = 0.0
 	
 		for t in range(self.num_episodes + 1):
 			episode_reward = 0.0
@@ -172,17 +181,19 @@ class DQN():
 					done = True
 				
 				# Push the output to the memory
-				self.memory.push(action, next_state, reward, done)
+				self.memory.push(state, action, next_state, reward, done)
 
 				# Learn
 				if step >= self.start_learning:
-					if not step % self.step_target_update:
-						self.learn(clone=True)
-					else:
-						self.learn(clone=False)
+					if not step % self.freq_learning:
+						if not step % self.step_target_update:
+							self.learn(clone=True)
+						else:
+							self.learn(clone=False)
 
 				step += 1
 				episode_reward += reward
+
 
 			end_time = round(time.time() - start_time, 4)
 
@@ -202,6 +213,11 @@ class DQN():
 					step, mean_reward,
 					round(eps, 3),
 					end_time))
+
+			if episode_reward > best:
+				self.log("Saving model, best reward :{}".format(episode_reward))
+				self.save_model()
+				best = episode_reward
 
 			# Update the log and reset the env and variables
 			self.env.reset()
@@ -232,5 +248,5 @@ class DQN():
 
 		fig.tight_layout(pad=2)
 		# plt.show()
-		plt.savefig('playground/atari/fig/run1.png')
+		plt.savefig(PATH_FIG)
 

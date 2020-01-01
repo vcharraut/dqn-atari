@@ -24,10 +24,11 @@ class Dense_NN(nn.Module):
 
 
 class CNN(nn.Module):
+
+
 	def __init__(self, input_shape, num_actions):
 		super(CNN, self).__init__()
 		self._input_shape = input_shape
-		self._num_actions = num_actions
 
 		self.features = nn.Sequential(
 			nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
@@ -54,3 +55,39 @@ class CNN(nn.Module):
 	def feature_size(self):
 		x = self.features(torch.zeros(1, *self._input_shape))
 		return x.view(1, -1).size(1)
+
+
+
+class Dueling_CNN(nn.Module):
+    def __init__(self, input_shape, num_actions):
+        super(Dueling_CNN, self).__init__()
+        self.num_actions = num_actions
+        
+        self.features = nn.Sequential(
+			nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
+			nn.ReLU(),
+			nn.Conv2d(32, 64, kernel_size=4, stride=2),
+			nn.ReLU(),
+			nn.Conv2d(64, 64, kernel_size=3, stride=1),
+			nn.ReLU()
+		)
+
+        self.fc1_adv = nn.Linear(in_features=7*7*64, out_features=512)
+        self.fc1_val = nn.Linear(in_features=7*7*64, out_features=512)
+
+        self.fc2_adv = nn.Linear(in_features=512, out_features=num_actions)
+        self.fc2_val = nn.Linear(in_features=512, out_features=1)
+
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.features(x).view(x.size()[0], -1)
+
+        adv = self.relu(self.fc1_adv(x))
+        val = self.relu(self.fc1_val(x))
+
+        adv = self.fc2_adv(adv)
+        val = self.fc2_val(val).expand(x.size(0), self.num_actions)
+        
+        x = val + adv - adv.mean(1).unsqueeze(1).expand(x.size(0), self.num_actions)
+        return x
