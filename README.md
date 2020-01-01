@@ -48,10 +48,11 @@ This project was made under the supervision of [Arthur Aubret](https://github.co
 ----------------
 ## References
 
-[1] [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)  
-[2] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461)  
-[3] [Prioritized Experience Replay](http://arxiv.org/abs/1511.05952)  
-[4] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
+[1] [Human-level control through deep reinforcement
+learning](https://web.stanford.edu/class/psych209/Readings/MnihEtAlHassibis15NatureControlDeepRL.pdf)  
+[2] [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/pdf/1509.06461.pdf)  
+[3] [Prioritized Experience Replay](https://arxiv.org/pdf/1511.05952.pdf)  
+[4] [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/pdf/1511.06581.pdf)  
 [5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
 [6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
 [7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
