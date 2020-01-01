@@ -54,5 +54,5 @@ learning](https://web.stanford.edu/class/psych209/Readings/MnihEtAlHassibis15Nat
 [3] [Prioritized Experience Replay](https://arxiv.org/pdf/1511.05952.pdf)  
 [4] [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/pdf/1511.06581.pdf)  
 [5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
-[6] [A Distributional Perspective on Reinforcement Learning]https://arxiv.org/pdf/1707.06887.pdf)  
+[6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/pdf/1707.06887.pdf)  
 [7] [Noisy Networks for Exploration](https://arxiv.org/pdf/1706.10295.pdf)  
