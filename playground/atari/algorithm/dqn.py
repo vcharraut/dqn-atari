@@ -13,9 +13,9 @@ from playground.utils.model import CNN, Dueling_CNN
 import time
 
 
-PATH_LOG = 'playground/atari/log/dqn1.txt'
-PATH_SAVE = 'playground/atari/save/dqn1.pt'
-PATH_FIG = 'playground/atari/fig/dqn1.png'
+PATH_LOG = 'playground/atari/log/dqn_MSEloss_yes.txt'
+PATH_SAVE = 'playground/atari/save/dqn_MSEloss_yes.pt'
+PATH_FIG = 'playground/atari/fig/dqn_MSEloss_yes.png'
 
 class DQN():
 
@@ -23,7 +23,7 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq=False, dueling=False):
+	def __init__(self, env, config, doubleq=True, dueling=True):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
@@ -63,7 +63,7 @@ class DQN():
 		# 									momentum=0.95)
 
 		# Error function
-		self.__loss_fn = torch.nn.SmoothL1Loss()
+		self.__loss_fn = torch.nn.MSELoss()
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
