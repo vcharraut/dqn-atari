@@ -19,21 +19,24 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq, dueling, adam, mse):
+	def __init__(self, env, config, doubleq, dueling, adam, mse, play=False):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
+
+		self.play = play
 		
 		# Parameters
-		self.gamma = config.gamma
-		self.bath_size = config.batch_size
-		self.step_target_update = config.target_update
-		self.freq_learning = config.freq_learning
-		self.epsilon_decay = config.epsilon_decay
-		self.epsilon_start = config.epsilon_start
-		self.epsilon_end = config.epsilon_end
-		self.num_episodes = config.num_episodes
-		self.start_learning = config.start_learning
+		if not play : 
+			self.gamma = config.gamma
+			self.bath_size = config.batch_size
+			self.step_target_update = config.target_update
+			self.freq_learning = config.freq_learning
+			self.epsilon_decay = config.epsilon_decay
+			self.epsilon_start = config.epsilon_start
+			self.epsilon_end = config.epsilon_end
+			self.num_episodes = config.num_episodes
+			self.start_learning = config.start_learning
 
 		# Architecture parameters
 		self.doubleq = doubleq
@@ -52,23 +55,27 @@ class DQN():
 		if dueling:
 			use_dueling = '_dueling'
 			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
-			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
+			if not play : 
+				self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
 			use_dueling = ''
 			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
-			self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
+			if not play : 
+				self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
+
 
 		# Backpropagation function
-		if adam:
-			optim_method = '_adam'
-			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
-		else:
-			optim_method = '_rmsprop'
-			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-		 									lr=config.learning_rate,
-		 									eps=0.001,
-		 									alpha=0.95,
-		 									momentum=0.95)
+		if not play : 
+			if adam:
+				optim_method = '_adam'
+				self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
+			else:
+				optim_method = '_rmsprop'
+				self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
+												lr=config.learning_rate,
+												eps=0.001,
+												alpha=0.95,
+												momentum=0.95)
 
 		# Error function
 		if mse:
@@ -92,8 +99,8 @@ class DQN():
 
 		self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
 		self.path_save = 'playground/atari/save/dqn' + specs
-		self.path_fig = 'playground/atari/fig/dqn' + specs + '.png'
-		config.save_config('playground/atari/log/dqn' + specs + '-config.txt', env)
+		self.path_fig = 'playground/atari/fig/dqn' + specs
+		config.save_config('playground/atari/log/dqn-config' + specs + '.txt', env)
 
 
 	"""
@@ -261,9 +268,56 @@ class DQN():
 
 
 	"""
+	Eval a trained model for n episodes.
+	"""
+	def test(self, num_episodes=50, display=False, model_path=None):
+
+		if self.play:
+			if model_path is None:
+				raise ValueError('No path model given.')
+			self.model = copy.deepcody(torch.load(model_path))
+		else:
+			self.log('\n')
+			self.log('#' * 50)
+			self.log('Evaluation')
+			self.log('\n')
+			
+		self.model.eval()
+		self.plot_reward.clear()
+		previous_live = 5
+
+		for episode in range(1, num_episodes + 1):
+			# Run one episode until termination
+			episode_reward = 0
+			done = False
+			state = self.env.reset()
+			while not done:
+				if display:
+					self.env.render()
+
+				action = self.get_policy(state)
+
+				# Get the output of env from this action
+				state, reward, _, lifes = self.env.step(action)
+
+				episode_reward += reward
+
+				# End the episode when the agent loses a life
+				if previous_live is not lifes['ale.lives']:
+					previous_live = lifes['ale.lives']
+					done = True
+
+
+			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
+			self.plot_reward.append(episode_reward)
+
+		self.env.close()
+
+
+	"""
 	Plot the rewards during the training.
 	"""
-	def figure(self):
+	def figure(self, train=True):
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
 		window = 30
 		rolling_mean = pd.Series(self.plot_reward).rolling(window).mean()
@@ -279,5 +333,9 @@ class DQN():
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		plt.savefig(self.path_fig)
 
+		if train:
+			path = self.path_fig + 'png'
+		else:
+			path = self.path_fig + '-eval.png'
+		plt.savefig(path)

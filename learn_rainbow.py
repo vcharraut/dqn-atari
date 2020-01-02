@@ -20,6 +20,8 @@ else:
 
 agent = Rainbow('BreakoutNoFrameskip-v4', config, adam=args.adam)
 agent.train()
-agent.play()
 agent.figure()
+agent.test()
+agent.figure(train=False)
+
 

@@ -104,7 +104,7 @@ class Rainbow():
 
 		self.path_log = 'playground/atari/log/rainbow' + specs + '.txt'
 		self.path_save = 'playground/atari/save/rainbow' + specs
-		self.path_fig = 'playground/atari/fig/rainbow' + specs + '.png'
+		self.path_fig = 'playground/atari/fig/rainbow' + specs 
 		config.save_config('playground/atari/log/rainbow-config' + specs + '.txt', env)
 
 
@@ -241,11 +241,11 @@ class Rainbow():
 				action, eps = self.act(state, step)
 
 				# Get the output of env from this action
-				next_state, reward, _, live = self.env.step(action)
+				next_state, reward, _, lifes = self.env.step(action)
 
 				# End the episode when the agent loses a life
-				if previous_live is not live['ale.lives']:
-					previous_live = live['ale.lives']
+				if previous_live is not lifes['ale.lives']:
+					previous_live = lifes['ale.lives']
 					done = True
 				
 				# Push the output to the memory
@@ -302,40 +302,54 @@ class Rainbow():
 	"""
 	Eval a trained model for n episodes.
 	"""
-	def play(self, env, num_episodes=50, display=False, model_path=None):
+	def test(self, num_episodes=50, display=False, model_path=None):
 
 		if self.play:
 			if model_path is None:
 				raise ValueError('No path model given.')
 			self.model = copy.deepcody(torch.load(model_path))
+		else:
+			self.log('\n')
+			self.log('#' * 50)
+			self.log('Evaluation')
+			self.log('\n')
 			
 		self.model.eval()
 		self.plot_reward.clear()
+		previous_live = 5
 
-		for episode in trange(1, num_episodes + 1):
+		for episode in range(1, num_episodes + 1):
 			# Run one episode until termination
 			episode_reward = 0
 			done = False
-			state = agent.env.reset()
+			state = self.env.reset()
 			while not done:
-				agent.env.render()
+				if display:
+					self.env.render()
 
 				action = self.get_policy(state)
 
 				# Get the output of env from this action
-				state, reward, done, _ = agent.env.step(action)
+				state, reward, _, lifes = self.env.step(action)
+
 				episode_reward += reward
+
+				# End the episode when the agent loses a life
+				if previous_live is not lifes['ale.lives']:
+					previous_live = lifes['ale.lives']
+					done = True
+
 
 			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
 			self.plot_reward.append(episode_reward)
 
-		env.close()
+		self.env.close()
 
 
 	"""
 	Plot the rewards.
 	"""
-	def figure(self):
+	def figure(self, train=True):
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
 		window = 30
 		rolling_mean = pd.Series(self.plot_reward).rolling(window).mean()
@@ -351,5 +365,10 @@ class Rainbow():
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		plt.savefig(self.path_fig)
+
+		if train:
+			path = self.path_fig + 'png'
+		else:
+			path = self.path_fig + '-eval.png'
+		plt.savefig(path)
 

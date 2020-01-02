@@ -16,8 +16,9 @@ agent = DQN('BreakoutNoFrameskip-v4', config,
                                     adam=args.adam,
                                     mse=args.mse)
 agent.train()
-agent.play()
 agent.figure()
+agent.test()
+agent.figure(train=False)
 
 
 
