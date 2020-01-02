@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import time
 import glob
+from tqdm import trange
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
@@ -54,8 +55,8 @@ class DQN():
 			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
 			use_dueling = ''
-			self.model = CNN(self.env.observation_space.shape[0], self.env.action_space.n)
-			self.qtarget = CNN(self.env.observation_space.shape[0], self.env.action_space.n)
+			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
 
 		# Backpropagation function
 		if adam:
@@ -90,7 +91,7 @@ class DQN():
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn' + specs + '*.txt')) + 1)
 
 		self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
-		self.path_save = 'playground/atari/save/dqn' + specs + '.pt'
+		self.path_save = 'playground/atari/save/dqn' + specs
 		self.path_fig = 'playground/atari/fig/dqn' + specs + '.png'
 		config.save_config('playground/atari/log/dqn' + specs + '-config.txt', env)
 
@@ -117,7 +118,6 @@ class DQN():
 		if np.random.rand() < eps_threshold:
 			return self.env.action_space.sample(), eps_threshold
 		else:
-			
 			return self.get_policy(state), eps_threshold
 
 
@@ -169,8 +169,13 @@ class DQN():
 	"""
 	Save the model.
 	"""
-	def save_model(self):
-		torch.save(self.model.state_dict(), self.path_save)
+	def save_model(self, final=False):
+		if final:
+			path = self.path_save + '-final.pt'
+		else:
+			path = self.path_save + '.pt'
+
+		torch.save(self.model.state_dict(), path)
 
 
 	"""
@@ -187,7 +192,7 @@ class DQN():
 		step, previous_live = 0, 5
 		best = 0.0
 	
-		for t in range(self.num_episodes + 1):
+		for t in trange(1, self.num_episodes + 1):
 			episode_reward = 0.0
 			done = False
 			state = self.env.reset()
@@ -229,7 +234,7 @@ class DQN():
 			if not t % 20:
 				mean_reward = sum(self.plot_reward[-10:]) / 10
 				max_reward = max(self.plot_reward[-10:])
-				print("[{}/{}] -- step:{} -- avg_reward:{} -- best_reward:{}  -- eps:{} -- time:{}".format(
+				self.log("[{}/{}] -- step:{} -- avg_reward:{} -- best_reward:{}  -- eps:{} -- time:{}".format(
 					t,
 					self.num_episodes,
 					step, 
@@ -238,6 +243,9 @@ class DQN():
 					round(eps, 3),
 					end_time))
 
+			if not t % 5:
+				self.plot_reward.append(episode_reward)
+
 			if episode_reward > best:
 				self.log("Saving model, best reward :{}".format(episode_reward))
 				self.save_model()
@@ -245,10 +253,11 @@ class DQN():
 
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward.append(episode_reward)
+			
 			done = False
 
 		self.env.close()
+		self.save_model(final=True)
 
 
 	"""

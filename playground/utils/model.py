@@ -106,7 +106,6 @@ class NoisyLinear(nn.Module):
 		self.reset_parameters()
 		self.reset_noise()
 
-
 	def reset_parameters(self):
 		mu_range = 1 / math.sqrt(self.in_features)
 		self.weight_mu.data.uniform_(-mu_range, mu_range)
@@ -139,7 +138,8 @@ class RainbowNetwork(nn.Module):
 		self.action_space = action_space
 
 		if architecture == 'canonical':
-	  		self.convs = nn.Sequential(
+			hidden_layer = 512
+			self.convs = nn.Sequential(
 				nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
 			  	nn.ReLU(),
 				nn.Conv2d(32, 64, kernel_size=4, stride=2),
@@ -147,42 +147,46 @@ class RainbowNetwork(nn.Module):
 				nn.Conv2d(64, 64, kernel_size=3, stride=1),
 				nn.ReLU()
 			)
-	  		self.conv_output_size = 3136
+			self.conv_output_size = 3136
 		elif architecture == 'data-efficient':
-	  		self.convs = nn.Sequential(
+			hidden_layer = 256
+			self.convs = nn.Sequential(
 				nn.Conv2d(input_shape[0], 32, kernel_size=5, stride=5),
 				nn.ReLU(),
 				nn.Conv2d(32, 64, kernel_size=5, stride=5),
 				nn.ReLU()
 			)
-	  		self.conv_output_size = 576
+			self.conv_output_size = 576
 
-		self.fc_h_v = NoisyLinear(self.conv_output_size, 512, std_init=noisy_std)
-		self.fc_h_a = NoisyLinear(self.conv_output_size, 512, std_init=noisy_std)
-		self.fc_z_v = NoisyLinear(512, self.atoms, std_init=noisy_std)
-		self.fc_z_a = NoisyLinear(512, action_space * self.atoms, std_init=noisy_std)
-
+		self.fc_h_v = NoisyLinear(
+			self.conv_output_size, hidden_layer, std_init=noisy_std)
+		self.fc_h_a = NoisyLinear(
+			self.conv_output_size, hidden_layer, std_init=noisy_std)
+		self.fc_z_v = NoisyLinear(hidden_layer, self.atoms, std_init=noisy_std)
+		self.fc_z_a = NoisyLinear(
+			hidden_layer, action_space * self.atoms, std_init=noisy_std)
 
 	def forward(self, x, log=False):
 		x = self.convs(x)
 		x = x.view(-1, self.conv_output_size)
 
 		# Value stream
-		v = self.fc_z_v(F.relu(self.fc_h_v(x)))  
+		v = self.fc_z_v(F.relu(self.fc_h_v(x)))
 
 		# Advantage stream
-		a = self.fc_z_a(F.relu(self.fc_h_a(x)))  
+		a = self.fc_z_a(F.relu(self.fc_h_a(x)))
 		v, a = v.view(-1, 1, self.atoms), a.view(-1, self.action_space, self.atoms)
 
 		# Combine streams
-		q = v + a - a.mean(1, keepdim=True)  
+		q = v + a - a.mean(1, keepdim=True)
 
 		# Use log softmax for numerical stability
-		if log:  
-			return F.log_softmax(q, dim=2)  # Log probabilities with action over second dimension
+		if log:
+			# Log probabilities with action over second dimension
+			return F.log_softmax(q, dim=2)
 		else:
-			return F.softmax(q, dim=2)  # Probabilities with action over second dimension
-
+			# Probabilities with action over second dimension
+			return F.softmax(q, dim=2)
 
 	def reset_noise(self):
 		for name, module in self.named_children():

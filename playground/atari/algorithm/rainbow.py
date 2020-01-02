@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import time
 import glob
+from tqdm import tqdm
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import PrioritizedReplayMemory
@@ -18,33 +19,41 @@ class Rainbow():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a Rainbow.
 	"""
-	def __init__(self, env, config, adam):
+	def __init__(self, env, config, adam, play=False):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
 
+		self.play = play
+
 		# Parameters
-		self.gamma = config.gamma
-		self.batch_size = config.batch_size
-		self.step_target_update = config.target_update
-		self.freq_learning = config.freq_learning
-		self.epsilon_decay = config.epsilon_decay
-		self.epsilon_start = config.epsilon_start
-		self.epsilon_end = config.epsilon_end
-		self.num_steps = config.num_steps
-		self.start_learning = config.start_learning
-		self.vmin = config.vmin
-		self.vmax = config.vmax
-		self.prior_expo = config.prior_expo
-		self.prior_samp = config.prior_samp
-		self.n = config.multi_step
-		self.atoms = config.atoms
+		if not play : 
+			self.gamma = config.gamma
+			self.batch_size = config.batch_size
+			self.step_target_update = config.target_update
+			self.freq_learning = config.freq_learning
+			self.epsilon_decay = config.epsilon_decay
+			self.epsilon_start = config.epsilon_start
+			self.epsilon_end = config.epsilon_end
+			self.num_steps = config.num_steps
+			self.start_learning = config.start_learning
+			self.vmin = config.vmin
+			self.vmax = config.vmax
+			self.prior_expo = config.prior_expo
+			self.prior_samp = config.prior_samp
+			self.n = config.multi_step
+			self.atoms = config.atoms
+			# Support (range) of z
+			self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
+			self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
+		
 
 		# List to save the rewards 
 		self.plot_reward = []
 
 		# Experience-Replay
-		self.memory = PrioritizedReplayMemory(config.memory_capacity)
+		if not play:
+			self.memory = PrioritizedReplayMemory(config.memory_capacity)
 		
 		# Dueling CNN for the qvalues and qtarget
 		self.model = RainbowNetwork(self.env.observation_space.shape,
@@ -52,28 +61,29 @@ class Rainbow():
 									config.atoms,
 									config.noisy_nets,
 									config.architecture)
-		self.qtarget = RainbowNetwork(self.env.observation_space.shape,
-									self.env.action_space.n,
-									config.atoms,
-									config.noisy_nets,
-									config.architecture)
+		if not play:
+			self.qtarget = RainbowNetwork(self.env.observation_space.shape,
+										self.env.action_space.n,
+										config.atoms,
+										config.noisy_nets,
+										config.architecture)
 
-		# Support (range) of z
-		self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
-		self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
 		
 
 		# Backpropagation function
-		if adam:
-			optim_method = '_adam'
-			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate, eps=config.adam_exp)
-		else:
-			optim_method = '_rmsprop'
-			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-		 									lr=config.learning_rate,
-		 									eps=0.001,
-		 									alpha=0.95,
-		 									momentum=0.95)
+		if not play:
+			if adam:
+				optim_method = '_adam'
+				self.__optimizer = torch.optim.Adam(self.model.parameters(),
+												lr=config.learning_rate,
+												eps=config.adam_exp)
+			else:
+				optim_method = '_rmsprop'
+				self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
+												lr=config.learning_rate,
+												eps=0.001,
+												alpha=0.95,
+												momentum=0.95)
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
@@ -81,16 +91,21 @@ class Rainbow():
 			self.model.cuda()
 			self.qtarget.cuda()
 			self.device = torch.device('cuda')
+		else:
+			self.device = torch.device('cpu')
 
 		# Path to the logs folder
-		specs = optim_method 
+		if not play:
+			specs = optim_method 
+		else:
+			specs = 'eval'
 		# See if training has been made with this configuration
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'rainbow' + specs + '*.txt')) + 1)
 
 		self.path_log = 'playground/atari/log/rainbow' + specs + '.txt'
-		self.path_save = 'playground/atari/save/rainbow' + specs + '.pt'
+		self.path_save = 'playground/atari/save/rainbow' + specs
 		self.path_fig = 'playground/atari/fig/rainbow' + specs + '.png'
-		config.save_config('playground/atari/log/rainbow' + specs + '-config.txt', env)
+		config.save_config('playground/atari/log/rainbow-config' + specs + '.txt', env)
 
 
 	"""
@@ -99,7 +114,7 @@ class Rainbow():
 	def get_policy(self, state):
 		with torch.no_grad():
 			state = torch.from_numpy(state).to(self.device)
-			return (self.model(state.unsqueeze(0)) * self.support).sum(2).max(1)[0].item()
+			return (self.model(state.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 	
 
 	"""
@@ -115,7 +130,6 @@ class Rainbow():
 		if np.random.rand() < eps_threshold:
 			return self.env.action_space.sample(), eps_threshold
 		else:
-			
 			return self.get_policy(state), eps_threshold
 
 
@@ -184,8 +198,13 @@ class Rainbow():
 	"""
 	Save the model.
 	"""
-	def save_model(self):
-		torch.save(self.model.state_dict(), self.path_save)
+	def save_model(self, final=False):
+		if final:
+			path = self.path_save + '-final.pt'
+		else:
+			path = self.path_save + '.pt'
+
+		torch.save(self.model.state_dict(), path)
 
 
 	"""
@@ -197,12 +216,14 @@ class Rainbow():
 
 
 	"""
-	Run n episode to train the model.
+	Run n episodes to train the model.
 	"""
 	def train(self, display=False):
 		priority_weight_increase = (1 - self.prior_samp) / (self.num_steps - self.start_learning)
 		step, episode, previous_live = 0, 0, 5
 		best = 0.0
+
+		pbar = tqdm(total=self.num_steps)
 	
 		while step <= self.num_steps:
 			episode_reward = 0.0
@@ -218,8 +239,6 @@ class Rainbow():
 
 				# Select one action
 				action, eps = self.act(state, step)
-				action = int(action)
-				action = 3 if action > 3 else action
 
 				# Get the output of env from this action
 				next_state, reward, _, live = self.env.step(action)
@@ -245,13 +264,14 @@ class Rainbow():
 							self.learn(clone=False)
 
 				step += 1
+				pbar.update()
 				episode_reward += reward
 				state = next_state
 
 
 			end_time = round(time.time() - start_time, 4)
 
-			if not episode % 50:
+			if not episode % 20:
 				mean_reward = sum(self.plot_reward[-50:]) / 50
 				max_reward = max(self.plot_reward[-50:])
 				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
@@ -262,6 +282,9 @@ class Rainbow():
 					round(eps, 3),
 					end_time))
 
+			if not episode % 5:
+				self.plot_reward.append(episode_reward)
+
 			if episode_reward > best:
 				self.log("Saving model, best reward :{}".format(episode_reward))
 				self.save_model()
@@ -269,14 +292,48 @@ class Rainbow():
 
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward.append(episode_reward)
 			done = False
 
+		pbar.close()
 		self.env.close()
+		self.save_model(final=True)
 
 
 	"""
-	Plot the rewards during the training.
+	Eval a trained model for n episodes.
+	"""
+	def play(self, env, num_episodes=50, display=False, model_path=None):
+
+		if self.play:
+			if model_path is None:
+				raise ValueError('No path model given.')
+			self.model = copy.deepcody(torch.load(model_path))
+			
+		self.model.eval()
+		self.plot_reward.clear()
+
+		for episode in trange(1, num_episodes + 1):
+			# Run one episode until termination
+			episode_reward = 0
+			done = False
+			state = agent.env.reset()
+			while not done:
+				agent.env.render()
+
+				action = self.get_policy(state)
+
+				# Get the output of env from this action
+				state, reward, done, _ = agent.env.step(action)
+				episode_reward += reward
+
+			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
+			self.plot_reward.append(episode_reward)
+
+		env.close()
+
+
+	"""
+	Plot the rewards.
 	"""
 	def figure(self):
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])

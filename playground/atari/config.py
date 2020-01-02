@@ -1,10 +1,10 @@
 # Hyperparameters used for the training DQN 
 # memory_capacity = 150000
-# num_episodes    = 100000
+# num_episodes    = 300000
 # batch_size      = 32
 # target_update   = 10000
-# start_learning  = 50000
-# freq_learning   = 1
+# start_learning  = 5000
+# freq_learning   = 2
 # learning_rate   = 0.00025
 # gamma           = 0.99
 # epsilon_decay   = 200000
@@ -16,11 +16,11 @@ class Config():
 
 	def __init__(self,
 				memory_capacity=150000,
-				num_episodes=100000,
+				num_episodes=300000,
 				batch_size=32,
 				target_update=10000, 
 				start_learning=50000,
-				freq_learning=1,
+				freq_learning=2,
 				learning_rate=0.00025,
 				gamma=0.99,
 				epsilon_decay=200000,
@@ -88,7 +88,7 @@ class ConfigRainbow():
 				batch_size=32,
 				target_update=32000, 
 				start_learning=50000,
-				freq_learning=1,
+				freq_learning=4,
 				learning_rate=0.0000625,
 				adam_exp=0.00015,
 				gamma=0.99,
