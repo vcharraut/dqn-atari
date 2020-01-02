@@ -148,6 +148,7 @@ class PrioritizedReplayMemory():
 	"""Adds state and action at time t, reward and terminal at time t + 1"""
 	def append(self, state, action, reward, terminal):
 		# Only store last frame and discretise to save memory
+		state = torch.from_numpy(state)
 		state = state[-1].mul(255).to(dtype=torch.uint8, device=torch.device('cpu'))  
 
 		# Store new transition with maximum priority

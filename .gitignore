@@ -2,3 +2,7 @@ build/
 dist/
 playground.egg-info/
 .vscode/
+playground/__pycache__
+playground/atari/__pycache__
+playground/atari/algorithm/__pycache__
+playground/utils/__pycache__
