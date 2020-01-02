@@ -133,11 +133,10 @@ class NoisyLinear(nn.Module):
 
 class RainbowNetwork(nn.Module):
 
-	def __init__(self, input_shape, action_space, atoms=51, noisy_std=0.1):
+	def __init__(self, input_shape, action_space, atoms, noisy_std, architecture):
 		super(RainbowNetwork, self).__init__()
 		self.atoms = atoms
 		self.action_space = action_space
-		architecture = 'data-efficient'
 
 		if architecture == 'canonical':
 	  		self.convs = nn.Sequential(
@@ -164,7 +163,7 @@ class RainbowNetwork(nn.Module):
 		self.fc_z_a = NoisyLinear(512, action_space * self.atoms, std_init=noisy_std)
 
 
-	def forward(self, x, log=True):
+	def forward(self, x, log=False):
 		x = self.convs(x)
 		x = x.view(-1, self.conv_output_size)
 

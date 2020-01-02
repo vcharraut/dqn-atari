@@ -18,21 +18,27 @@ class Rainbow():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a Rainbow.
 	"""
-	def __init__(self, env, config, adam, mse):
+	def __init__(self, env, config, adam):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
 
 		# Parameters
 		self.gamma = config.gamma
-		self.bath_size = config.batch_size
+		self.batch_size = config.batch_size
 		self.step_target_update = config.target_update
 		self.freq_learning = config.freq_learning
 		self.epsilon_decay = config.epsilon_decay
 		self.epsilon_start = config.epsilon_start
 		self.epsilon_end = config.epsilon_end
-		self.num_episodes = config.num_episodes
+		self.num_steps = config.num_steps
 		self.start_learning = config.start_learning
+		self.vmin = config.vmin
+		self.vmax = config.vmax
+		self.prior_expo = config.prior_expo
+		self.prior_samp = config.prior_samp
+		self.n = config.multi_step
+		self.atoms = config.atoms
 
 		# List to save the rewards 
 		self.plot_reward = []
@@ -41,21 +47,26 @@ class Rainbow():
 		self.memory = PrioritizedReplayMemory(config.memory_capacity)
 		
 		# Dueling CNN for the qvalues and qtarget
-		self.model = RainbowNetwork(self.env.observation_space.shape, self.env.action_space.n)
-		self.qtarget = RainbowNetwork(self.env.observation_space.shape, self.env.action_space.n)
+		self.model = RainbowNetwork(self.env.observation_space.shape,
+									self.env.action_space.n,
+									config.atoms,
+									config.noisy_nets,
+									config.architecture)
+		self.qtarget = RainbowNetwork(self.env.observation_space.shape,
+									self.env.action_space.n,
+									config.atoms,
+									config.noisy_nets,
+									config.architecture)
 
-
-		self.Vmin = -10
-		self.Vmax = 10
-		self.atoms = 51
-		self.support = torch.linspace(self.Vmin, self.Vmax, self.atoms).to(torch.device('cuda'))  # Support (range) of z
-		self.delta_z = (self.Vmax - self.Vmin) / (self.atoms - 1)
-		self.n = 3
+		# Support (range) of z
+		self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
+		self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
+		
 
 		# Backpropagation function
 		if adam:
 			optim_method = '_adam'
-			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate, eps=1.5e-4)
+			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate, eps=config.adam_exp)
 		else:
 			optim_method = '_rmsprop'
 			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
@@ -63,14 +74,6 @@ class Rainbow():
 		 									eps=0.001,
 		 									alpha=0.95,
 		 									momentum=0.95)
-
-		# Error function
-		if mse:
-			loss_method = '_mse'
-			self.__loss_fn = torch.nn.MSELoss()
-		else:
-			loss_method = '_huber'
-			self.__loss_fn = torch.nn.SmoothL1Loss()
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
@@ -80,7 +83,7 @@ class Rainbow():
 			self.device = torch.device('cuda')
 
 		# Path to the logs folder
-		specs = optim_method + loss_method
+		specs = optim_method 
 		# See if training has been made with this configuration
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'rainbow' + specs + '*.txt')) + 1)
 
@@ -126,33 +129,32 @@ class Rainbow():
 			self.qtarget.load_state_dict(self.model.state_dict())
 
 		# Get a random batch from the memory
-		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample(self.bath_size)
+		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample(self.batch_size)
 
 		# Q values predicted by the model 
-		pred = self.model(states).gather(1, actions)
+		prob_state = self.model(states, log=True)
+		prob_state_action = prob_state[range(self.batch_size), actions]
 
 		with torch.no_grad():
 			# Expected Q values are estimated from actions which gives maximum Q value
-			qvalue_next_state = self.model(next_states).argmax(1).long().unsqueeze(-1)
+			qvalue_next_state = self.model(next_states)
 			distri_qvalue = self.support.expand_as(qvalue_next_state) * qvalue_next_state
-			max_qvalue_next_state = distri_qvalue.sum(2).argmax(1)
+			actions_next_state = distri_qvalue.sum(2).argmax(1)
 			self.qtarget.reset_noise()
 
-			max_q_target = self.qtarget(next_states).gather(1, max_qvalue_next_state)
-
-			# Apply Bellman equation
-			y = rewards + (1. - done) * self.gamma * max_q_target
+			prob_next_state = self.qtarget(next_states)
+			prob_next_state_action = prob_next_state[range(self.batch_size), actions_next_state]
 
 			# Compute Tz (Bellman operator T applied to z)
 			# Tz = R^n + (γ^n)z (accounting for terminal states)
-			Tz = returns.unsqueeze(1) + nonterminals * (self.gamma ** 3) * self.support.unsqueeze(0) 
+			Tz = returns.unsqueeze(1) + nonterminals * (self.gamma ** self.n) * self.support.unsqueeze(0) 
 
 			# Clamp between supported values
-			Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)  
+			Tz = Tz.clamp(min=self.vmin, max=self.vmax)  
 
 			# Compute L2 projection of Tz onto fixed support z
 			# b = (Tz - Vmin) / Δz
-			b = (Tz - self.Vmin) / self.delta_z  
+			b = (Tz - self.vmin) / self.delta_z  
 
 			l, u = b.floor().to(torch.int64), b.ceil().to(torch.int64)
 			# Fix disappearing probability mass when l = b = u (b is int)
@@ -163,17 +165,17 @@ class Rainbow():
 			m = states.new_zeros(self.batch_size, self.atoms)
 			offset = torch.linspace(0, ((self.batch_size - 1) * self.atoms), self.batch_size).unsqueeze(1).expand(self.batch_size, self.atoms).to(actions)
 			# m_l = m_l + p(s_t+n, a*)(u - b)
-			m.view(-1).index_add_(0, (l + offset).view(-1), (max_q_target * (u.float() - b)).view(-1))  
+			m.view(-1).index_add_(0, (l + offset).view(-1), (prob_next_state_action * (u.float() - b)).view(-1))  
 			# m_u = m_u + p(s_t+n, a*)(b - l)
-			m.view(-1).index_add_(0, (u + offset).view(-1), (max_q_target * (b - l.float())).view(-1))  
+			m.view(-1).index_add_(0, (u + offset).view(-1), (prob_next_state_action * (b - l.float())).view(-1))  
 
 		# Cross-entropy loss (minimises DKL(m||p(s_t, a_t)))
-		loss = -torch.sum(m * log_ps_a, 1)  
-		self.model.zero_grad()
+		loss = -torch.sum(m * prob_state_action, 1)  
+		self.__optimizer.zero_grad()
 
 		# Backpropagate importance-weighted minibatch loss
 		(weights * loss).mean().backward()  
-		self.optimiser.step()
+		self.__optimizer.step()
 
 		# Update priorities of sampled transitions
 		self.memory.update_priorities(idxs, loss.detach().cpu().numpy())  
@@ -198,15 +200,16 @@ class Rainbow():
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
-		priority_weight_increase = (1 - 0.4) / (int(50e6) - int(32e3))
-		step, previous_live = 0, 5
+		priority_weight_increase = (1 - self.prior_samp) / (self.num_steps - self.start_learning)
+		step, episode, previous_live = 0, 0, 5
 		best = 0.0
 	
-		for t in range(self.num_episodes + 1):
+		while step <= self.num_steps:
 			episode_reward = 0.0
 			done = False
 			state = self.env.reset()
 			start_time = time.time()
+			episode += 1
 
 			# Run one episode until termination
 			while not done:
@@ -214,10 +217,10 @@ class Rainbow():
 					self.env.render()
 
 				# Select one action
-
 				action, eps = self.act(state, step)
 				action = int(action)
 				action = 3 if action > 3 else action
+
 				# Get the output of env from this action
 				next_state, reward, _, live = self.env.step(action)
 
@@ -233,8 +236,8 @@ class Rainbow():
 					self.model.reset_noise()
 
 				# Learn
-				if step >= 1000:
-					self.memory.priority_weight = min(0.4 + priority_weight_increase, 1)
+				if step >= self.start_learning:
+					self.memory.priority_weight = min(self.prior_samp + priority_weight_increase, 1)
 					if not step % self.freq_learning:
 						if not step % self.step_target_update:
 							self.learn(clone=True)
@@ -248,20 +251,14 @@ class Rainbow():
 
 			end_time = round(time.time() - start_time, 4)
 
-			self.log("[{}/{}] -- step:{} -- reward:{} -- eps:{} -- time:{}".format(
-					t,
-					self.num_episodes,
+			if not episode % 50:
+				mean_reward = sum(self.plot_reward[-50:]) / 50
+				max_reward = max(self.plot_reward[-50:])
+				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
+					episode,
 					step,
-					episode_reward,
-					round(eps, 3),
-					end_time))
-
-			if not t % 10:
-				mean_reward = sum(self.plot_reward[-10:]) / 10
-				print("[{}/{}] -- step:{} -- avg_reward:{} -- eps:{} -- time:{}".format(
-					t,
-					self.num_episodes,
-					step, mean_reward,
+					mean_reward,
+					max_reward,
 					round(eps, 3),
 					end_time))
 

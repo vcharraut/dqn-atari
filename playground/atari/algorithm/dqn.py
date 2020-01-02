@@ -50,8 +50,8 @@ class DQN():
 		
 		if dueling:
 			use_dueling = '_dueling'
-			self.model = Dueling_CNN(self.env.observation_space.shape[0], self.env.action_space.n)
-			self.qtarget = Dueling_CNN(self.env.observation_space.shape[0], self.env.action_space.n)
+			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
 			use_dueling = ''
 			self.model = CNN(self.env.observation_space.shape[0], self.env.action_space.n)
@@ -226,20 +226,15 @@ class DQN():
 
 			end_time = round(time.time() - start_time, 4)
 
-			self.log("[{}/{}] -- step:{} -- reward:{} -- eps:{} -- time:{}".format(
-					t,
-					self.num_episodes,
-					step,
-					episode_reward,
-					round(eps, 3),
-					end_time))
-
-			if not t % 10:
+			if not t % 20:
 				mean_reward = sum(self.plot_reward[-10:]) / 10
-				print("[{}/{}] -- step:{} -- avg_reward:{} -- eps:{} -- time:{}".format(
+				max_reward = max(self.plot_reward[-10:])
+				print("[{}/{}] -- step:{} -- avg_reward:{} -- best_reward:{}  -- eps:{} -- time:{}".format(
 					t,
 					self.num_episodes,
-					step, mean_reward,
+					step, 
+					mean_reward,
+					max_reward,
 					round(eps, 3),
 					end_time))
 
