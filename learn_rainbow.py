@@ -1,6 +1,6 @@
 from playground.atari.config import ConfigRainbow
 from playground.atari.algorithm.rainbow import Rainbow
-
+import argparse
 
 parser = argparse.ArgumentParser(description='DQN')
 parser.add_argument('--minimal', type=int, help='')
