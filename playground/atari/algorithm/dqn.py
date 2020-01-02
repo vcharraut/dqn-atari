@@ -11,8 +11,6 @@ from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
 from playground.utils.model import CNN, Dueling_CNN
 
-import time
-
 
 class DQN():
 
@@ -24,6 +22,7 @@ class DQN():
 
 		# Gym environnement
 		self.env = wrap_environment(env)
+		
 		# Parameters
 		self.gamma = config.gamma
 		self.bath_size = config.batch_size
@@ -51,12 +50,12 @@ class DQN():
 		
 		if dueling:
 			use_dueling = '_dueling'
-			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
-			self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.model = Dueling_CNN(self.env.observation_space.shape[0], self.env.action_space.n)
+			self.qtarget = Dueling_CNN(self.env.observation_space.shape[0], self.env.action_space.n)
 		else:
 			use_dueling = ''
-			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
-			self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
+			self.model = CNN(self.env.observation_space.shape[0], self.env.action_space.n)
+			self.qtarget = CNN(self.env.observation_space.shape[0], self.env.action_space.n)
 
 		# Backpropagation function
 		if adam:

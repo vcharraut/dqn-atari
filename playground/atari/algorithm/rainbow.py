@@ -5,25 +5,20 @@ import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import glob
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import PrioritizedReplayMemory
-from playground.utils.model import CNN, Dueling_CNN
-
-import time
+from playground.utils.model import RainbowNetwork
 
 
-PATH_LOG = 'playground/atari/log/rainbow'
-PATH_SAVE = 'playground/atari/save/rainbow'
-PATH_FIG = 'playground/atari/fig/rainbow'
-
-class DQN():
+class Rainbow():
 
 	"""
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
-	The learning is done by a DQN.
+	The learning is done by a Rainbow.
 	"""
-	def __init__(self, env, config, adam=True, mse=True):
+	def __init__(self, env, config, adam, mse):
 
 		# Gym environnement
 		self.env = wrap_environment(env)
@@ -43,17 +38,26 @@ class DQN():
 		self.plot_reward = []
 
 		# Experience-Replay
-		self.memory = PrioritizedExperienceReplay(config.memory_capacity)
+		self.memory = PrioritizedReplayMemory(config.memory_capacity)
 		
+		# Dueling CNN for the qvalues and qtarget
+		self.model = RainbowNetwork(self.env.observation_space.shape, self.env.action_space.n)
+		self.qtarget = RainbowNetwork(self.env.observation_space.shape, self.env.action_space.n)
 
-		self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
-		self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 
+		self.Vmin = -10
+		self.Vmax = 10
+		self.atoms = 51
+		self.support = torch.linspace(self.Vmin, self.Vmax, self.atoms).to(torch.device('cuda'))  # Support (range) of z
+		self.delta_z = (self.Vmax - self.Vmin) / (self.atoms - 1)
+		self.n = 3
 
 		# Backpropagation function
 		if adam:
-			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
+			optim_method = '_adam'
+			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate, eps=1.5e-4)
 		else:
+			optim_method = '_rmsprop'
 			self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
 		 									lr=config.learning_rate,
 		 									eps=0.001,
@@ -62,8 +66,10 @@ class DQN():
 
 		# Error function
 		if mse:
+			loss_method = '_mse'
 			self.__loss_fn = torch.nn.MSELoss()
 		else:
+			loss_method = '_huber'
 			self.__loss_fn = torch.nn.SmoothL1Loss()
 
 		# Make the model using the GPU if available
@@ -73,14 +79,24 @@ class DQN():
 			self.qtarget.cuda()
 			self.device = torch.device('cuda')
 
+		# Path to the logs folder
+		specs = optim_method + loss_method
+		# See if training has been made with this configuration
+		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'rainbow' + specs + '*.txt')) + 1)
+
+		self.path_log = 'playground/atari/log/rainbow' + specs + '.txt'
+		self.path_save = 'playground/atari/save/rainbow' + specs + '.pt'
+		self.path_fig = 'playground/atari/fig/rainbow' + specs + '.png'
+		config.save_config('playground/atari/log/rainbow' + specs + '-config.txt', env)
+
 
 	"""
 	Get the action for the qvalue given a state
 	"""
 	def get_policy(self, state):
-		state = torch.from_numpy(state).float() \
-				.unsqueeze(0).to(self.device)
-		return self.model(state).argmax().item()
+		with torch.no_grad():
+			state = torch.from_numpy(state).to(self.device)
+			return (self.model(state.unsqueeze(0)) * self.support).sum(2).max(1)[0].item()
 	
 
 	"""
@@ -105,66 +121,84 @@ class DQN():
 	"""
 	def learn(self, clone):
 
-		# Skip if the memory is not full enough
-		if self.memory.size < self.bath_size:
-			return
-
 		# Clone the q-values model to the q-targets model
 		if clone:
 			self.qtarget.load_state_dict(self.model.state_dict())
 
 		# Get a random batch from the memory
-		idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(self.batch_size)
-
-		state = torch.from_numpy(state).to(self.device)
-		action = torch.from_numpy(action).long().to(self.device).unsqueeze(-1)
-		next_state = torch.from_numpy(next_state).to(self.device)
-		rewards = torch.from_numpy(rewards).to(self.device)
-		done = torch.from_numpy(done).to(self.device)
+		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample(self.bath_size)
 
 		# Q values predicted by the model 
-		pred = self.model(state).gather(1, action).squeeze()
+		pred = self.model(states).gather(1, actions)
 
 		with torch.no_grad():
 			# Expected Q values are estimated from actions which gives maximum Q value
-			action_by_qvalue = self.model(next_state).argmax(1).long().unsqueeze(-1)
-			max_q_target = self.qtarget(next_state).gather(1, action_by_qvalue).squeeze()
+			qvalue_next_state = self.model(next_states).argmax(1).long().unsqueeze(-1)
+			distri_qvalue = self.support.expand_as(qvalue_next_state) * qvalue_next_state
+			max_qvalue_next_state = distri_qvalue.sum(2).argmax(1)
+			self.qtarget.reset_noise()
+
+			max_q_target = self.qtarget(next_states).gather(1, max_qvalue_next_state)
 
 			# Apply Bellman equation
 			y = rewards + (1. - done) * self.gamma * max_q_target
 
+			# Compute Tz (Bellman operator T applied to z)
+			# Tz = R^n + (γ^n)z (accounting for terminal states)
+			Tz = returns.unsqueeze(1) + nonterminals * (self.gamma ** 3) * self.support.unsqueeze(0) 
 
-		# loss is measured from error between current and newly expected Q values
-		loss = self.__loss_fn(y, pred)
+			# Clamp between supported values
+			Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)  
 
-		# backpropagation of loss to NN
-		self.__optimizer.zero_grad()
-		loss.backward()
-		self.__optimizer.step()
+			# Compute L2 projection of Tz onto fixed support z
+			# b = (Tz - Vmin) / Δz
+			b = (Tz - self.Vmin) / self.delta_z  
 
-		mem.update_priorities(idxs, loss.detach().cpu().numpy()) 
+			l, u = b.floor().to(torch.int64), b.ceil().to(torch.int64)
+			# Fix disappearing probability mass when l = b = u (b is int)
+			l[(u > 0) * (l == u)] -= 1
+			u[(l < (self.atoms - 1)) * (l == u)] += 1
+
+			# Distribute probability of Tz
+			m = states.new_zeros(self.batch_size, self.atoms)
+			offset = torch.linspace(0, ((self.batch_size - 1) * self.atoms), self.batch_size).unsqueeze(1).expand(self.batch_size, self.atoms).to(actions)
+			# m_l = m_l + p(s_t+n, a*)(u - b)
+			m.view(-1).index_add_(0, (l + offset).view(-1), (max_q_target * (u.float() - b)).view(-1))  
+			# m_u = m_u + p(s_t+n, a*)(b - l)
+			m.view(-1).index_add_(0, (u + offset).view(-1), (max_q_target * (b - l.float())).view(-1))  
+
+		# Cross-entropy loss (minimises DKL(m||p(s_t, a_t)))
+		loss = -torch.sum(m * log_ps_a, 1)  
+		self.model.zero_grad()
+
+		# Backpropagate importance-weighted minibatch loss
+		(weights * loss).mean().backward()  
+		self.optimiser.step()
+
+		# Update priorities of sampled transitions
+		self.memory.update_priorities(idxs, loss.detach().cpu().numpy())  
 
 
 	"""
 	Save the model.
 	"""
 	def save_model(self):
-		torch.save(self.model.state_dict(), PATH_SAVE)
+		torch.save(self.model.state_dict(), self.path_save)
 
 
 	"""
 	Write logs into a file
 	"""
 	def log(self, string):
-		with open(PATH_LOG, "a") as f:
-			f.write(string)
-			f.write("\n")
+		with open(self.path_log, "a") as f:
+			f.write(string + "\n")
 
 
 	"""
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
+		priority_weight_increase = (1 - 0.4) / (int(50e6) - int(32e3))
 		step, previous_live = 0, 5
 		best = 0.0
 	
@@ -180,8 +214,10 @@ class DQN():
 					self.env.render()
 
 				# Select one action
-				action, eps = self.act(state, step)
 
+				action, eps = self.act(state, step)
+				action = int(action)
+				action = 3 if action > 3 else action
 				# Get the output of env from this action
 				next_state, reward, _, live = self.env.step(action)
 
@@ -191,10 +227,14 @@ class DQN():
 					done = True
 				
 				# Push the output to the memory
-				self.memory.push(state, action, next_state, reward, done)
+				self.memory.append(state, action, reward, done)
+
+				if not step % self.freq_learning:
+					self.model.reset_noise()
 
 				# Learn
-				if step >= self.start_learning:
+				if step >= 1000:
+					self.memory.priority_weight = min(0.4 + priority_weight_increase, 1)
 					if not step % self.freq_learning:
 						if not step % self.step_target_update:
 							self.learn(clone=True)
@@ -203,6 +243,7 @@ class DQN():
 
 				step += 1
 				episode_reward += reward
+				state = next_state
 
 
 			end_time = round(time.time() - start_time, 4)
@@ -241,7 +282,6 @@ class DQN():
 	Plot the rewards during the training.
 	"""
 	def figure(self):
-
 		fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
 		window = 30
 		rolling_mean = pd.Series(self.plot_reward).rolling(window).mean()
@@ -257,6 +297,5 @@ class DQN():
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		# plt.show()
-		plt.savefig(PATH_FIG)
+		plt.savefig(self.path_fig)
 
