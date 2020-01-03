@@ -236,15 +236,15 @@ class PrioritizedReplayMemory():
 		return prob, idx, tree_idx, state, action, R, next_state, nonterminal
 
 
-	def sample(self, batch_size):
+	def sample(self):
 		# Retrieve sum of all priorities (used to create a normalised probability distribution)
 		p_total = self.transitions.total()  
 
 		# Batch size number of segments, based on sum over all probabilities
-		segment = p_total / batch_size  
+		segment = p_total / self.batch_size  
 
 		# Get batch of valid samples
-		batch = [self._get_sample_from_segment(segment, i) for i in range(batch_size)]  
+		batch = [self._get_sample_from_segment(segment, i) for i in range(self.batch_size)]  
 		probs, idxs, tree_idxs, states, actions, returns, next_states, nonterminals = zip(*batch)
 		states, next_states, = torch.stack(states), torch.stack(next_states)
 		actions, returns, nonterminals = torch.cat(actions), torch.cat(returns), torch.stack(nonterminals)
