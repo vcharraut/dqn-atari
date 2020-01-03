@@ -239,7 +239,7 @@ class Rainbow():
 				action, eps = self.act(state, step)
 
 				# Get the output of env from this action
-				next_state, reward, _, lifes = self.env.step(action)
+				next_state, reward, done, _ = self.env.step(action)
 
 				# Push the output to the memory
 				self.memory.append(state, action, reward, done)
