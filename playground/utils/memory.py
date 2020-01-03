@@ -22,10 +22,10 @@ class ReplayMemory():
 		state, action, next_state, reward, done = zip(*batch)
 
 		return (np.array(state),
-					np.array(action),
-					np.array(next_state),
-					np.array(reward, dtype=np.float32),
-					np.array(done, dtype=np.uint8))
+				np.array(action),
+				np.array(next_state),
+				np.array(reward, dtype=np.float32),
+				np.array(done, dtype=np.uint8))
 
 	@property
 	def size(self):

@@ -136,12 +136,8 @@ class Rainbow():
 	"""
 	Train the model.
 	"""
-	def learn(self, clone):
-
-		# Clone the q-values model to the q-targets model
-		if clone:
-			self.qtarget.load_state_dict(self.model.state_dict())
-
+	def learn(self):
+		
 		# Get a random batch from the memory
 		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample(self.batch_size)
 
@@ -258,22 +254,22 @@ class Rainbow():
 				if step >= self.start_learning:
 					self.memory.priority_weight = min(self.prior_samp + priority_weight_increase, 1)
 					if not step % self.freq_learning:
-						if not step % self.step_target_update:
-							self.learn(clone=True)
-						else:
-							self.learn(clone=False)
+						self.learn()
+
+					# Clone the q-values model to the q-targets model
+					if not step % self.step_target_update:
+						self.qtarget.load_state_dict(self.model.state_dict())
 
 				step += 1
 				pbar.update()
 				episode_reward += reward
 				state = next_state
 
-
 			end_time = round(time.time() - start_time, 4)
 
 			if not episode % 20:
-				mean_reward = sum(self.plot_reward[-50:]) / 50
-				max_reward = max(self.plot_reward[-50:])
+				mean_reward = sum(self.plot_reward[-20:]) / 20
+				max_reward = max(self.plot_reward[-20:])
 				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
 					episode,
 					step,

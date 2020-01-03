@@ -80,10 +80,10 @@ class DQN():
 		# Error function
 		if mse:
 			loss_method = '_mse'
-			self.__loss_fn = torch.nn.MSELoss()
+			self.__loss_fn = torch.nn.MSELoss(reduction='mean')
 		else:
 			loss_method = '_huber'
-			self.__loss_fn = torch.nn.SmoothL1Loss()
+			self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
 
 		# Make the model using the GPU if available
 		use_cuda = torch.cuda.is_available()
@@ -131,15 +131,7 @@ class DQN():
 	"""
 	Train the model.
 	"""
-	def learn(self, clone):
-
-		# Skip if the memory is not full enough
-		if self.memory.size < self.bath_size:
-			return
-
-		# Clone the q-values model to the q-targets model
-		if clone:
-			self.qtarget.load_state_dict(self.model.state_dict())
+	def learn(self):
 
 		# Get a random batch from the memory
 		state, action, next_state, rewards, done = self.memory.sample(self.bath_size)
@@ -170,6 +162,8 @@ class DQN():
 		# backpropagation of loss to NN
 		self.__optimizer.zero_grad()
 		loss.backward()
+		for param in self.model.parameters():
+			param.grad.data.clamp_(-1, 1)
 		self.__optimizer.step()
 
 
@@ -215,6 +209,8 @@ class DQN():
 
 				# Get the output of env from this action
 				next_state, reward, _, live = self.env.step(action)
+				if reward > 0:
+					print(reward)
 
 				# End the episode when the agent loses a life
 				if previous_live is not live['ale.lives']:
@@ -227,11 +223,13 @@ class DQN():
 				# Learn
 				if step >= self.start_learning:
 					if not step % self.freq_learning:
-						if not step % self.step_target_update:
-							self.learn(clone=True)
-						else:
-							self.learn(clone=False)
+						self.learn()
 
+					# Clone the q-values model to the q-targets model
+					if not step % self.step_target_update:
+						self.qtarget.load_state_dict(self.model.state_dict())
+
+	
 				step += 1
 				episode_reward += reward
 
@@ -239,8 +237,8 @@ class DQN():
 			end_time = round(time.time() - start_time, 4)
 
 			if not t % 20:
-				mean_reward = sum(self.plot_reward[-10:]) / 10
-				max_reward = max(self.plot_reward[-10:])
+				mean_reward = sum(self.plot_reward[-20:]) / 20
+				max_reward = max(self.plot_reward[-20:])
 				self.log("[{}/{}] -- step:{} -- avg_reward:{} -- best_reward:{}  -- eps:{} -- time:{}".format(
 					t,
 					self.num_episodes,
