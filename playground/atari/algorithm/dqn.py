@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import time
 import glob
-from tqdm import trange
+from tqdm import tqdm
 
 from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
@@ -35,7 +35,7 @@ class DQN():
 			self.epsilon_decay = config.epsilon_decay
 			self.epsilon_start = config.epsilon_start
 			self.epsilon_end = config.epsilon_end
-			self.num_episodes = config.num_episodes
+			self.num_steps = config.num_steps
 			self.start_learning = config.start_learning
 
 		# Architecture parameters
@@ -50,7 +50,7 @@ class DQN():
 		self.plot_reward = []
 
 		# Experience-Replay
-		self.memory = ReplayMemory(config.memory_capacity)
+		self.memory = ReplayMemory(config)
 		
 		if dueling:
 			use_dueling = '_dueling'
@@ -107,10 +107,11 @@ class DQN():
 	Get the action for the qvalue given a state
 	"""
 	def get_policy(self, state):
-		state = torch.from_numpy(state).float() \
-				.unsqueeze(0).to(self.device)
-		return self.model(state).argmax().item()
-	
+		with torch.no_grad():
+			state = torch.from_numpy(state).float() \
+					.unsqueeze(0).to(self.device)
+			return self.model(state).argmax().item()
+		
 
 	"""
 	Compute the probabilty of exploration during the training
@@ -134,13 +135,8 @@ class DQN():
 	def learn(self):
 
 		# Get a random batch from the memory
-		state, action, next_state, rewards, done = self.memory.sample(self.bath_size)
+		state, action, next_state, rewards, done = self.memory.sample()
 
-		state = torch.from_numpy(state).to(self.device)
-		action = torch.from_numpy(action).long().to(self.device).unsqueeze(-1)
-		next_state = torch.from_numpy(next_state).to(self.device)
-		rewards = torch.from_numpy(rewards).to(self.device)
-		done = torch.from_numpy(done).to(self.device)
 
 		# Q values predicted by the model 
 		pred = self.model(state).gather(1, action).squeeze()
@@ -190,14 +186,17 @@ class DQN():
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
-		step, previous_live = 0, 5
+		step, episode = 0, 0
 		best = 0.0
+
+		pbar = tqdm(total=self.num_steps)
 	
-		for t in trange(1, self.num_episodes + 1):
+		while step <= self.num_steps:
 			episode_reward = 0.0
 			done = False
 			state = self.env.reset()
 			start_time = time.time()
+			episode += 1
 
 			# Run one episode until termination
 			while not done:
@@ -208,17 +207,10 @@ class DQN():
 				action, eps = self.act(state, step)
 
 				# Get the output of env from this action
-				next_state, reward, _, live = self.env.step(action)
-				if reward > 0:
-					print(reward)
+				next_state, reward, done, _ = self.env.step(action)
 
-				# End the episode when the agent loses a life
-				if previous_live is not live['ale.lives']:
-					previous_live = live['ale.lives']
-					done = True
-				
 				# Push the output to the memory
-				self.memory.push(state, action, next_state, reward, done)
+				self.memory.push(next_state, action, reward, done)
 
 				# Learn
 				if step >= self.start_learning:
@@ -229,38 +221,32 @@ class DQN():
 					if not step % self.step_target_update:
 						self.qtarget.load_state_dict(self.model.state_dict())
 
-	
 				step += 1
+				pbar.update()
 				episode_reward += reward
-
+				state = next_state
 
 			end_time = round(time.time() - start_time, 4)
 
-			if not t % 20:
+			if not episode % 20:
 				mean_reward = sum(self.plot_reward[-20:]) / 20
 				max_reward = max(self.plot_reward[-20:])
-				self.log("[{}/{}] -- step:{} -- avg_reward:{} -- best_reward:{}  -- eps:{} -- time:{}".format(
-					t,
-					self.num_episodes,
-					step, 
+				if max_reward > best:
+					self.log("Saving model, best reward :{}".format(max_reward))
+					self.save_model()
+					best = max_reward
+				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
+					episode,
+					step,
 					mean_reward,
 					max_reward,
 					round(eps, 3),
 					end_time))
 
-			if not t % 5:
+			if not episode % 5:
 				self.plot_reward.append(episode_reward)
 
-			if episode_reward > best:
-				self.log("Saving model, best reward :{}".format(episode_reward))
-				self.save_model()
-				best = episode_reward
-
-			# Update the log and reset the env and variables
-			self.env.reset()
-			
-			done = False
-
+		pbar.close()
 		self.env.close()
 		self.save_model(final=True)
 
@@ -296,14 +282,9 @@ class DQN():
 				action = self.get_policy(state)
 
 				# Get the output of env from this action
-				state, reward, _, lifes = self.env.step(action)
+				state, reward, done, _ = self.env.step(action)
 
 				episode_reward += reward
-
-				# End the episode when the agent loses a life
-				if previous_live is not lifes['ale.lives']:
-					previous_live = lifes['ale.lives']
-					done = True
 
 
 			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))

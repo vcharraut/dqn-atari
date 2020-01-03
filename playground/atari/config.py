@@ -1,6 +1,6 @@
 # Hyperparameters used for the training DQN 
 # memory_capacity = 150000
-# num_episodes    = 300000
+# num_steps       = 4000000
 # batch_size      = 32
 # target_update   = 10000
 # start_learning  = 5000
@@ -15,20 +15,20 @@
 class Config():
 
 	def __init__(self,
-				memory_capacity=150000,
-				num_episodes=300000,
+				memory_capacity=1000000,
+				num_steps=4000000,
 				batch_size=32,
 				target_update=10000, 
 				start_learning=50000,
-				freq_learning=2,
+				freq_learning=4,
 				learning_rate=0.00025,
 				gamma=0.99,
-				epsilon_decay=200000,
+				epsilon_decay=1000000,
 				epsilon_start=1, 
-				epsilon_end=0.1):
+				epsilon_end=0.05):
 			   
 		self.memory_capacity = memory_capacity
-		self.num_episodes = num_episodes
+		self.num_steps = num_steps
 		self.batch_size = batch_size
 		self.target_update = target_update
 		self.start_learning = start_learning
@@ -44,7 +44,7 @@ class Config():
 		with open(path, 'a') as f:
 			f.write('environment     = ' + env + '\n')
 			f.write('memory_capacity = ' + str(self.memory_capacity) + '\n')
-			f.write('num_episodes    = ' + str(self.num_episodes) + '\n')
+			f.write('num_steps       = ' + str(self.num_steps) + '\n')
 			f.write('batch_size      = ' + str(self.batch_size) + '\n')
 			f.write('target_update   = ' + str(self.target_update) + '\n')
 			f.write('start_learning  = ' + str(self.start_learning) + '\n')
@@ -83,8 +83,8 @@ class ConfigRainbow():
 
 
 	def __init__(self,
-				memory_capacity=150000,
-				num_step=int(50e6),
+				memory_capacity=1000000,
+				num_steps=int(50e6),
 				batch_size=32,
 				target_update=32000, 
 				start_learning=50000,
@@ -105,7 +105,7 @@ class ConfigRainbow():
 				architecture='canonical'):
 			   
 		self.memory_capacity = memory_capacity
-		self.num_steps = num_step
+		self.num_steps = num_steps
 		self.batch_size = batch_size
 		self.target_update = target_update
 		self.start_learning = start_learning

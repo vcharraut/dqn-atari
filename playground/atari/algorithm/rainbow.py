@@ -53,7 +53,7 @@ class Rainbow():
 
 		# Experience-Replay
 		if not play:
-			self.memory = PrioritizedReplayMemory(config.memory_capacity)
+			self.memory = PrioritizedReplayMemory(config)
 		
 		# Dueling CNN for the qvalues and qtarget
 		self.model = RainbowNetwork(self.env.observation_space.shape,
@@ -137,9 +137,9 @@ class Rainbow():
 	Train the model.
 	"""
 	def learn(self):
-		
+
 		# Get a random batch from the memory
-		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample(self.batch_size)
+		idxs, states, actions, returns, next_states, nonterminals, weights = self.memory.sample()
 
 		# Q values predicted by the model 
 		prob_state = self.model(states, log=True)
@@ -185,6 +185,8 @@ class Rainbow():
 
 		# Backpropagate importance-weighted minibatch loss
 		(weights * loss).mean().backward()  
+		for param in self.model.parameters():
+			param.grad.data.clamp_(-1, 1)
 		self.__optimizer.step()
 
 		# Update priorities of sampled transitions
@@ -216,7 +218,7 @@ class Rainbow():
 	"""
 	def train(self, display=False):
 		priority_weight_increase = (1 - self.prior_samp) / (self.num_steps - self.start_learning)
-		step, episode, previous_live = 0, 0, 5
+		step, episode = 0, 0
 		best = 0.0
 
 		pbar = tqdm(total=self.num_steps)
@@ -239,21 +241,14 @@ class Rainbow():
 				# Get the output of env from this action
 				next_state, reward, _, lifes = self.env.step(action)
 
-				# End the episode when the agent loses a life
-				if previous_live is not lifes['ale.lives']:
-					previous_live = lifes['ale.lives']
-					done = True
-				
 				# Push the output to the memory
 				self.memory.append(state, action, reward, done)
-
-				if not step % self.freq_learning:
-					self.model.reset_noise()
 
 				# Learn
 				if step >= self.start_learning:
 					self.memory.priority_weight = min(self.prior_samp + priority_weight_increase, 1)
 					if not step % self.freq_learning:
+						self.model.reset_noise()
 						self.learn()
 
 					# Clone the q-values model to the q-targets model
@@ -270,6 +265,11 @@ class Rainbow():
 			if not episode % 20:
 				mean_reward = sum(self.plot_reward[-20:]) / 20
 				max_reward = max(self.plot_reward[-20:])
+				if max_reward > best:
+					self.log("Saving model, best reward :{}".format(max_reward))
+					self.save_model()
+					best = max_reward
+				
 				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
 					episode,
 					step,
@@ -280,15 +280,6 @@ class Rainbow():
 
 			if not episode % 5:
 				self.plot_reward.append(episode_reward)
-
-			if episode_reward > best:
-				self.log("Saving model, best reward :{}".format(episode_reward))
-				self.save_model()
-				best = episode_reward
-
-			# Update the log and reset the env and variables
-			self.env.reset()
-			done = False
 
 		pbar.close()
 		self.env.close()

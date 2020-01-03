@@ -65,14 +65,25 @@ class MaxAndSkipEnv(Wrapper):
 	def step(self, action):
 		total_reward = 0.0
 		done = None
-		for _ in range(self._skip):
-			obs, reward, done, info = self.env.step(action)
-			if not self._atari:
-				obs = self.env.render(mode='rgb_array')
-			self._obs_buffer.append(obs)
-			total_reward += reward
-			if done:
-				break
+
+		# Get first frame to collect the current life 
+		obs, reward, done, info = self.env.step(action)
+		if not self._atari:
+			obs = self.env.render(mode='rgb_array')
+		self._obs_buffer.append(obs)
+		total_reward += reward
+		life = info['ale.lives']
+
+		if not done:
+			for _ in range(self._skip - 1):
+				obs, reward, done, info = self.env.step(action)
+				if not self._atari:
+					obs = self.env.render(mode='rgb_array')
+				self._obs_buffer.append(obs)
+				total_reward += reward
+				if done or info['ale.lives'] != life:
+					done = True
+					break
 		max_frame = np.max(np.stack(self._obs_buffer), axis=0)
 		return max_frame, total_reward, done, info
 
