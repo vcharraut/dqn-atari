@@ -1,4 +1,4 @@
-from DRL.cartpole.DQN_Cartpole import DQN_Cartpole
+from playground.cartpole.DQN_Cartpole import DQN_Cartpole
 from tqdm import tqdm
 
 
@@ -7,9 +7,9 @@ hyperparams = []
 hyperparams.append([1e-2, 8, 0.99, 256, 10])
 hyperparams.append([1e-2, 8, 0.99, 256, 100])
 hyperparams.append([1e-2, 8, 0.99, 256, 1000])
-hyperparams.append([1e-2, 8, 0.999, 256, 10])
-hyperparams.append([1e-2, 8, 0.999, 256, 100])
-hyperparams.append([1e-2, 8, 0.999, 256, 1000])
+#hyperparams.append([1e-2, 8, 0.999, 256, 10])
+#hyperparams.append([1e-2, 8, 0.999, 256, 100])
+#hyperparams.append([1e-2, 8, 0.999, 256, 1000])
 # hyperparams.append([1e-2, 16, 0.99, 128, 10])
 # hyperparams.append([1e-2, 16, 0.99, 128, 100])
 # hyperparams.append([1e-2, 16, 0.99, 128, 1000])
@@ -98,10 +98,5 @@ hyperparams.append([1e-2, 8, 0.999, 256, 1000])
 # hyperparams.append([1e-4, 32, 0.8, 32, 100])
 # hyperparams.append([1e-4, 32, 0.8, 32, 1000])
 
-with tqdm(total=len(hyperparams)) as pbar:
-	for p in hyperparams:
-		agent = DQN_Cartpole(p[0], p[1], p[2], p[3], p[4])
-		agent.run()
-		pbar.update()
 
 
