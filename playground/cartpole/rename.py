@@ -11,20 +11,10 @@ from playground.utils.memory import CartpoleMemory
 from playground.utils.model import Dense_NN
 
 
-# Exploration parameters
-EPS_START = 1
-EPS_END = 0.05
-EPS_DECAY = 200
-
-# Training parameters
-EPISODE_WARMUP = 0
-EPISODE_LEARN = 500
-EPISODE_PLAY = 100
-
-PATH_LOG = 'playground/cartpole/fig2/log.txt'
+PATH_LOG = 'playground/cartpole/fig/log.txt'
 
 
-class DQN_Cartpole:
+class DQN():
 
 	"""
 	Initiale the Gym environnement Cartpole-v1.
@@ -37,59 +27,53 @@ class DQN_Cartpole:
 		- step_target_update
 	"""
 
-	def __init__(self,
-              learning_rate,
-              hidden_layer,
-              gamma,
-              batch_size,
-              step_target_update,
-              record=False):
+	def __init__(self, config, play=False, record=False):
 		# Gym environnement Cartpole
 		self.env = gym.make('CartPole-v1')
 		if record:
 			self.env = gym.wrappers.Monitor(
 				self.env, 'playground/cartpole/recording/', force=True)
+		
+		# List to save the rewards 
+		self.plot_reward = []
 
 		# Parameters
-		self.learning_rate = learning_rate
-		self.hidden_layer = hidden_layer
-		self.gamma = gamma
-		self.bath_size = batch_size
-		self.step_target_update = step_target_update
+		if not play:
+			self.learning_rate = learning_rate
+			self.hidden_layer = hidden_layer
+			self.gamma = gamma
+			self.bath_size = batch_size
+			self.step_target_update = step_target_update
 
-		# List to save the rewards and the loss
-		# throughout the training
-		self.plot_reward_train = []
-		self.plot_reward_play = []
-		self.list_loss = []
+			self.solved = False
+			self.episode_done = []
 
-		self.solved = False
-		self.episode_done = []
-
-		# Experience-Replay buffer
-		self.memory = CartpoleMemory(50000)
+			# Experience-Replay buffer
+			self.memory = CartpoleMemory(50000)
 
 		# Dense neural network to compute the q-values
 		self.q_nn = Dense_NN(in_dim=self.env.observation_space.shape[0],
-                       out_dim=self.env.action_space.n,
-                       hidden_layer=hidden_layer)
+					out_dim=self.env.action_space.n,
+					hidden_layer=hidden_layer)
 
-		# Dense neural network to compute the q-target
-		self.q_target_nn = Dense_NN(in_dim=self.env.observation_space.shape[0],
-                              out_dim=self.env.action_space.n,
-                              hidden_layer=hidden_layer)
+		if not play:
+			# Dense neural network to compute the q-target
+			self.q_target_nn = Dense_NN(in_dim=self.env.observation_space.shape[0],
+								out_dim=self.env.action_space.n,
+								hidden_layer=hidden_layer)
 
-		# Backpropagation function
-		self.__optimizer = torch.optim.RMSprop(
-			self.q_nn.parameters(), lr=learning_rate)
+			# Backpropagation function
+			self.__optimizer = torch.optim.RMSprop(
+				self.q_nn.parameters(), lr=learning_rate)
 
-		# Error function
-		self.__loss_fn = torch.nn.MSELoss(reduction='mean')
+			# Error function
+			self.__loss_fn = torch.nn.MSELoss(reduction='mean')
 
 		# Make the model using the GPU if available
 		if torch.cuda.is_available():
 			self.q_nn.cuda('cuda')
-			self.q_target_nn.cuda('cuda')
+			if not play:
+				self.q_target_nn.cuda('cuda')
 			self.device = torch.device('cuda')
 		else: 
 			self.device = torch.device('cpu')
@@ -282,10 +266,11 @@ class DQN_Cartpole:
 	(Solved : Mean Reward => 475)
 	"""
 
-	def play(self, display=True):
+	def test(self, display=True):
 		sum_reward = 0
 		done = False
 		state = self.env.reset()
+		self.plot_reward.clear()
 
 		for _ in range(EPISODE_PLAY):
 			# Run one episode until termination
@@ -304,11 +289,11 @@ class DQN_Cartpole:
 
 			# Update the log and reset the env and variables
 			self.env.reset()
-			self.plot_reward_play.append(sum_reward)
+			self.plot_reward.append(sum_reward)
 			sum_reward = 0
 			done = False
 
-		mean = sum(self.plot_reward_play) / len(self.plot_reward_play)
+		mean = sum(self.plot_reward) / len(self.plot_reward)
 		if mean >= self.env.spec.reward_threshold:
 			self.solved = True
 			self.save_model()
@@ -328,12 +313,15 @@ class DQN_Cartpole:
 	The figures are saved as file.
 	"""
 
-	def figure(self, training):
+	def play(self, display=True, model_path=None):
+		
+
+	def figure(self, training, save=True):
 
 		if self.solved:
-			path = 'playground/cartpole/fig2/solved/'
+			path = 'playground/cartpole/fig/solved/'
 		else:
-			path = 'playground/cartpole/fig2/notsolved/'
+			path = 'playground/cartpole/fig/notsolved/'
 
 		if training:
 			plot_reward = self.plot_reward_train
@@ -375,7 +363,10 @@ class DQN_Cartpole:
 		ax2.set_ylabel('Reward')
 
 		fig.tight_layout(pad=2)
-		plt.savefig(path)
+		if save:
+			plt.savefig(path)
+		else:
+			plt.show()
 
 	"""
 	Run the DQN algorithm to solve the Cartpole environnement.
