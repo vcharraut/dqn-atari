@@ -8,7 +8,7 @@ import time
 import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import wrap_environment
+from playground.utils.wrapper import make_atari, wrap_deepmind
 from playground.utils.memory import PrioritizedReplayMemory
 from playground.utils.model import RainbowNetwork
 
@@ -22,8 +22,7 @@ class Rainbow():
 	def __init__(self, env, config, adam, play=False):
 
 		# Gym environnement
-		self.env = wrap_environment(env)
-
+		self.env = wrap_deepmind(make_atari(env))
 		self.play = play
 
 		# Parameters
@@ -46,7 +45,6 @@ class Rainbow():
 		self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
 		self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
 		
-
 		# List to save the rewards 
 		self.plot_reward = []
 
@@ -60,12 +58,11 @@ class Rainbow():
 									config.atoms,
 									config.noisy_nets,
 									config.architecture)
-		if not play:
-			self.qtarget = RainbowNetwork(self.env.observation_space.shape,
-										self.env.action_space.n,
-										config.atoms,
-										config.noisy_nets,
-										config.architecture)
+		self.qtarget = RainbowNetwork(self.env.observation_space.shape,
+									self.env.action_space.n,
+									config.atoms,
+									config.noisy_nets,
+									config.architecture)
 
 		
 
@@ -112,7 +109,7 @@ class Rainbow():
 	"""
 	def get_policy(self, state):
 		with torch.no_grad():
-			state = torch.from_numpy(state).to(self.device)
+			state = torch.from_numpy(state).float().to(self.device)
 			return (self.model(state.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 	
 

@@ -9,7 +9,7 @@ parser.add_argument('--adam', type=int, help='')
 args = parser.parse_args()
 
 if args.minimal:
-    config = ConfigRainbow(num_step=100000,
+    config = ConfigRainbow(num_steps=100000,
                         target_update=2000,
                         start_learning=1600,
                         freq_learning=1,
