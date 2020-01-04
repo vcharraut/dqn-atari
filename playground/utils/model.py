@@ -53,6 +53,17 @@ class CNN(nn.Module):
 		return x.view(1, -1).size(1)
 
 
+	def weights_init(self, module):
+
+		if isinstance(module, nn.Conv2d):
+			nn.init.xavier_normal_(module.weight)
+			nn.init.constant_(module.bias, 1)
+
+		if isinstance(module, nn.Linear):
+			nn.init.xavier_normal_(module.weight)
+			nn.init.constant_(module.bias, 1)
+
+
 class Dueling_CNN(nn.Module):
 	def __init__(self, input_shape, num_actions):
 		super(Dueling_CNN, self).__init__()
@@ -87,6 +98,17 @@ class Dueling_CNN(nn.Module):
 		x = val + adv - \
 			adv.mean(1).unsqueeze(1).expand(x.size(0), self.num_actions)
 		return x
+
+	def weights_init(self, module):
+
+		if isinstance(module, nn.Conv2d):
+			nn.init.xavier_normal_(module.weight)
+			nn.init.constant_(module.bias, 1)
+
+		if isinstance(module, nn.Linear):
+			nn.init.xavier_normal_(module.weight)
+			nn.init.constant_(module.bias, 1)
+	
 
 
 class NoisyLinear(nn.Module):
@@ -192,3 +214,12 @@ class RainbowNetwork(nn.Module):
 		for name, module in self.named_children():
 			if 'fc' in name:
 				module.reset_noise()
+
+	
+	def weights_init(self, module):
+
+		if isinstance(module, nn.Conv2d):
+			print(module)
+			nn.init.xavier_normal_(module.weight)
+			nn.init.constant_(module.bias, 1)
+	

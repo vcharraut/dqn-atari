@@ -314,7 +314,7 @@ class DQN():
 		fig.tight_layout(pad=2)
 
 		if train:
-			path = self.path_fig + 'png'
+			path = self.path_fig + '.png'
 		else:
 			path = self.path_fig + '-eval.png'
 		plt.savefig(path)

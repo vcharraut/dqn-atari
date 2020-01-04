@@ -27,25 +27,24 @@ class Rainbow():
 		self.play = play
 
 		# Parameters
-		if not play : 
-			self.gamma = config.gamma
-			self.batch_size = config.batch_size
-			self.step_target_update = config.target_update
-			self.freq_learning = config.freq_learning
-			self.epsilon_decay = config.epsilon_decay
-			self.epsilon_start = config.epsilon_start
-			self.epsilon_end = config.epsilon_end
-			self.num_steps = config.num_steps
-			self.start_learning = config.start_learning
-			self.vmin = config.vmin
-			self.vmax = config.vmax
-			self.prior_expo = config.prior_expo
-			self.prior_samp = config.prior_samp
-			self.n = config.multi_step
-			self.atoms = config.atoms
-			# Support (range) of z
-			self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
-			self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
+		self.gamma = config.gamma
+		self.batch_size = config.batch_size
+		self.step_target_update = config.target_update
+		self.freq_learning = config.freq_learning
+		self.epsilon_decay = config.epsilon_decay
+		self.epsilon_start = config.epsilon_start
+		self.epsilon_end = config.epsilon_end
+		self.num_steps = config.num_steps
+		self.start_learning = config.start_learning
+		self.vmin = config.vmin
+		self.vmax = config.vmax
+		self.prior_expo = config.prior_expo
+		self.prior_samp = config.prior_samp
+		self.n = config.multi_step
+		self.atoms = config.atoms
+		# Support (range) of z
+		self.support = torch.linspace(config.vmin, config.vmax, config.atoms).to(torch.device('cuda'))  
+		self.delta_z = (config.vmax - config.vmin) / (config.atoms - 1)
 		
 
 		# List to save the rewards 
@@ -289,7 +288,7 @@ class Rainbow():
 	"""
 	Eval a trained model for n episodes.
 	"""
-	def test(self, num_episodes=50, display=False, model_path=None):
+	def test(self, num_episodes=100, display=False, model_path=None):
 
 		if self.play:
 			if model_path is None:
@@ -317,14 +316,9 @@ class Rainbow():
 				action = self.get_policy(state)
 
 				# Get the output of env from this action
-				state, reward, _, lifes = self.env.step(action)
+				state, reward, done, _ = self.env.step(action)
 
 				episode_reward += reward
-
-				# End the episode when the agent loses a life
-				if previous_live is not lifes['ale.lives']:
-					previous_live = lifes['ale.lives']
-					done = True
 
 
 			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
@@ -354,7 +348,7 @@ class Rainbow():
 		fig.tight_layout(pad=2)
 
 		if train:
-			path = self.path_fig + 'png'
+			path = self.path_fig + '.png'
 		else:
 			path = self.path_fig + '-eval.png'
 		plt.savefig(path)
