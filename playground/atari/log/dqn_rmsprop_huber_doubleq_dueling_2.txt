@@ -1,0 +1,6 @@
+Saving model, best reward :2.0
+Episode 20 -- step:2278 -- avg_reward:0.15 -- best_reward:2.0 -- eps:0.998 -- time:0.0914
+Episode 40 -- step:4792 -- avg_reward:0.45 -- best_reward:2.0 -- eps:0.995 -- time:0.2784
+Episode 60 -- step:6811 -- avg_reward:0.7 -- best_reward:2.0 -- eps:0.994 -- time:0.1898
+Saving model, best reward :3.0
+Episode 80 -- step:9125 -- avg_reward:0.95 -- best_reward:3.0 -- eps:0.991 -- time:0.1887

@@ -1,0 +1,2 @@
+Saving model, best reward :1.0
+Episode 20 -- step:2535 -- avg_reward:0.05 -- best_reward:1.0 -- eps:0.998 -- time:0.2825
