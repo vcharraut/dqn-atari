@@ -84,7 +84,7 @@ class ConfigRainbow():
 
 	def __init__(self,
 				memory_capacity=1000000,
-				num_steps=int(50e6),
+				num_steps=int(4e6),
 				batch_size=32,
 				target_update=32000, 
 				start_learning=50000,
