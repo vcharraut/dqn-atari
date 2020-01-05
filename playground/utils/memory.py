@@ -58,7 +58,7 @@ class ReplayMemory():
 	"""Add an experience to the memory"""
 	def push(self, state, action, reward, terminal):
 		state = torch.from_numpy(state)
-		state = state[-1].mul(255).to(dtype=torch.uint8, device=torch.device('cpu')) 
+		state = state.to(dtype=torch.uint8, device=torch.device('cpu')) 
 		self.memory.append((state, action, reward, terminal))
 		 
 		
@@ -74,9 +74,9 @@ class ReplayMemory():
 		
 		for t in range(self.batch_size):
 			i = sample_indices[t]
-			self.next_states[t] = self.memory[i][0].to(dtype=torch.float32).div_(255)
+			self.next_states[t] = self.memory[i][0].to(dtype=torch.float32)
 			if i != 0:
-				self.states[t] = self.memory[i-1][0].to(dtype=torch.float32).div_(255)
+				self.states[t] = self.memory[i-1][0].to(dtype=torch.float32)
 			else:
 				self.states[t] = torch.zeros(84, 84)
 			self.actions[t] = self.memory[i][1]
