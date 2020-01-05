@@ -4,7 +4,7 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--minimal', type=int, help='')
+parser.add_argument('--minimal', type=int, default=0, help='')
 args = parser.parse_args()
 
 if args.minimal:
