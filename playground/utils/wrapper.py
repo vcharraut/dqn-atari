@@ -198,9 +198,7 @@ class FrameStack(gym.Wrapper):
 		self.k = k
 		self.frames = deque([], maxlen=k)
 		shp = env.observation_space.shape
-		print("''", shp)
 		self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * k, shp[1], shp[2]), dtype=env.observation_space.dtype)
-		print("''", self.observation_space)
 
 	def reset(self):
 		ob = self.env.reset()
@@ -286,10 +284,11 @@ class TimeLimit(gym.Wrapper):
 
 
 
-def make_atari(env_id, max_episode_steps=None):
+def make_atari(env_id, max_episode_steps=None, evaluation=None):
 	env = gym.make(env_id)
 	assert 'NoFrameskip' in env.spec.id
-	env = NoopResetEnv(env, noop_max=30)
+	if evaluation:
+		env = NoopResetEnv(env, noop_max=30)
 	env = MaxAndSkipEnv(env, skip=4)
 	if max_episode_steps is not None:
 		env = TimeLimit(env, max_episode_steps=max_episode_steps)

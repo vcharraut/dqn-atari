@@ -7,8 +7,10 @@ import pandas as pd
 import time
 import glob
 from tqdm import tqdm
+import copy
 
-from playground.utils.wrapper import make_atari, wrap_deepmind
+# from playground.utils.wrapper import make_atari, wrap_deepmind
+from playground.utils.wrappers2 import wrap_environment
 from playground.utils.memory import PrioritizedReplayMemory
 from playground.utils.model import RainbowNetwork
 
@@ -19,11 +21,18 @@ class Rainbow():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a Rainbow.
 	"""
-	def __init__(self, env, config, adam, play=False):
+	def __init__(self, env, config, adam, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_deepmind(make_atari(env))
-		self.play = play
+		# self.env = wrap_deepmind(make_atari(env))
+		self.env = wrap_environment(env)
+
+		if record:
+			self.env = gym.wrappers.Monitor(
+				self.env, 'playground/atari/recording/rainbow', force=True)
+
+
+		self.evaluation = evaluation
 
 		# Parameters
 		self.gamma = config.gamma
@@ -47,9 +56,10 @@ class Rainbow():
 		
 		# List to save the rewards 
 		self.plot_reward = []
+		self.plot_eval = []
 
 		# Experience-Replay
-		if not play:
+		if not evaluation:
 			self.memory = PrioritizedReplayMemory(config)
 		
 		# Dueling CNN for the qvalues and qtarget
@@ -65,9 +75,8 @@ class Rainbow():
 									config.architecture)
 
 		
-
 		# Backpropagation function
-		if not play:
+		if not evaluation:
 			if adam:
 				optim_method = '_adam'
 				self.__optimizer = torch.optim.Adam(self.model.parameters(),
@@ -91,7 +100,7 @@ class Rainbow():
 			self.device = torch.device('cpu')
 
 		# Path to the logs folder
-		if not play:
+		if not evaluation:
 			specs = optim_method 
 		else:
 			specs = 'eval'
@@ -101,7 +110,8 @@ class Rainbow():
 		self.path_log = 'playground/atari/log/rainbow' + specs + '.txt'
 		self.path_save = 'playground/atari/save/rainbow' + specs
 		self.path_fig = 'playground/atari/fig/rainbow' + specs 
-		config.save_config('playground/atari/log/rainbow-config' + specs + '.txt', env)
+		if not evaluation:
+			config.save_config('playground/atari/log/rainbow-config' + specs + '.txt', env)
 
 
 	"""
@@ -210,12 +220,45 @@ class Rainbow():
 
 
 	"""
+	Evaluate the model during the training
+	"""
+	def evaluation(self, num_episodes=20):
+
+		self.model.eval()
+
+		for _ in range(num_episodes):
+			episode_reward = 0.0
+			done = False
+			state = self.env.reset()
+			for _ in range(10):
+				state, _, done, _ = self.env.step(0)
+				if done:
+					state = self.env.reset(**kwargs)
+
+			while not done:
+				action = self.get_policy(state)
+
+				# Get the output of env from this action
+				state, reward, done, _ = self.env.step(action)
+
+				episode_reward += reward
+
+			sum_reward += episode_reward
+			
+		self.plot_eval.append(sum_reward)
+		mean = sum_reward / num_episodes
+		self.log("## EVALUATION --  avg_reward:{}".format(mean))
+
+		self.model.train()
+
+
+	"""
 	Run n episodes to train the model.
 	"""
 	def train(self, display=False):
 		priority_weight_increase = (1 - self.prior_samp) / (self.num_steps - self.start_learning)
-		step, episode = 0, 0
-		best = 0.0
+		step, episode, best, mean_reward, max_reward = 0, 0, 0, 0, 0
+		step_evaluation = 20000
 
 		pbar = tqdm(total=self.num_steps)
 	
@@ -251,10 +294,22 @@ class Rainbow():
 					if not step % self.step_target_update:
 						self.qtarget.load_state_dict(self.model.state_dict())
 
+					# Evaluate the agent during the training
+					if not step % step_evaluation:
+						self.evaluation()
+
 				step += 1
 				pbar.update()
 				episode_reward += reward
 				state = next_state
+
+				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{}".format(
+					episode,
+					step,
+					mean_reward,
+					max_reward,
+					round(eps, 3)))
+
 
 			end_time = round(time.time() - start_time, 4)
 
@@ -266,40 +321,28 @@ class Rainbow():
 					self.save_model()
 					best = max_reward
 				
-				self.log("Episode {} -- step:{} -- avg_reward:{} -- best_reward:{} -- eps:{} -- time:{}".format(
-					episode,
-					step,
-					mean_reward,
-					max_reward,
-					round(eps, 3),
-					end_time))
-
+				
 			if not episode % 5:
 				self.plot_reward.append(episode_reward)
 
 		pbar.close()
 		self.env.close()
 		self.save_model(final=True)
+		self.figure()
 
 
 	"""
 	Eval a trained model for n episodes.
 	"""
-	def test(self, num_episodes=100, display=False, model_path=None):
+	def test(self, num_episodes=10, display=False, model_path=None):
 
-		if self.play:
+		if self.evaluation:
 			if model_path is None:
 				raise ValueError('No path model given.')
-			self.model = copy.deepcody(torch.load(model_path))
-		else:
-			self.log('\n')
-			self.log('#' * 50)
-			self.log('Evaluation')
-			self.log('\n')
-			
+			self.model.load_state_dict(torch.load(model_path))
+
 		self.model.eval()
 		self.plot_reward.clear()
-		previous_live = 5
 
 		for episode in range(1, num_episodes + 1):
 			# Run one episode until termination
@@ -318,10 +361,11 @@ class Rainbow():
 				episode_reward += reward
 
 
-			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
+			print("Episode {} -- reward:{} ".format(episode, episode_reward))
 			self.plot_reward.append(episode_reward)
 
 		self.env.close()
+		self.figure(train=False)
 
 
 	"""
@@ -339,6 +383,7 @@ class Rainbow():
 		ax1.set_ylabel('Reward')
 
 		ax2.plot(self.plot_reward)
+		ax2.plot(self.plot_eval)
 		ax2.set_xlabel('Episode')
 		ax2.set_ylabel('Reward')
 
@@ -348,5 +393,7 @@ class Rainbow():
 			path = self.path_fig + '.png'
 		else:
 			path = self.path_fig + '-eval.png'
+			plt.show()
 		plt.savefig(path)
+		
 

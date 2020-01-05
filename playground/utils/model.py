@@ -10,16 +10,16 @@ class Dense_NN(nn.Module):
 	def __init__(self, in_dim, out_dim, hidden_layer):
 		super(Dense_NN, self).__init__()
 
-		self.fc = nn.Sequential(
-			nn.Linear(in_dim, hidden_layer),
-			nn.ReLU(),
-			nn.Linear(hidden_layer, hidden_layer),
-			nn.ReLU(),
-			nn.Linear(hidden_layer, out_dim)
-		)
+		self.fc1 = nn.Linear(in_dim, hidden_layer)
+		self.fc2 = nn.Linear(hidden_layer, hidden_layer)
+		self.fc3 = nn.Linear(hidden_layer, out_dim)
 
 	def forward(self, x):
-		return self.fc(x)
+		x = self.fc1(x)
+		x = F.relu(x)
+		x = self.fc2(x)
+		x = F.relu(x)
+		return self.fc3(x)
 
 
 class CNN(nn.Module):

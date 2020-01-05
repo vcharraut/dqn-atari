@@ -19,15 +19,20 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq, dueling, adam, mse, play=False):
+	def __init__(self, env, config, doubleq, dueling, adam, mse, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_deepmind(make_atari(env))
+		self.env = wrap_deepmind(make_atari(env, evaluation=evaluation))
 
-		self.play = play
+		if record:
+			self.env = gym.wrappers.Monitor(
+				self.env, 'playground/atari/recording/dqn', force=True)
+
+		# Are we in evaluation mode ? 
+		self.evaluation = evaluation
 		
-		# Parameters
-		if not play : 
+		if not evaluation : 
+			# Parameters
 			self.gamma = config.gamma
 			self.bath_size = config.batch_size
 			self.step_target_update = config.target_update
@@ -38,35 +43,31 @@ class DQN():
 			self.num_steps = config.num_steps
 			self.start_learning = config.start_learning
 
+			# Experience-Replay
+			self.memory = ReplayMemory(config)
+
 		# Architecture parameters
 		self.doubleq = doubleq
 
-		if doubleq:
-			use_doubleq = '_doubleq'
-		else:
-			use_doubleq = ''
-
 		# List to save the rewards 
 		self.plot_reward = []
+		self.plot_eval = []
 
-		# Experience-Replay
-		self.memory = ReplayMemory(config)
-		
+		# Architecture of the neural networks
 		if dueling:
 			use_dueling = '_dueling'
-			
 			self.model = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
-			if not play : 
+			if not evaluation : 
 				self.qtarget = Dueling_CNN(self.env.observation_space.shape, self.env.action_space.n)
 		else:
 			use_dueling = ''
 			self.model = CNN(self.env.observation_space.shape, self.env.action_space.n)
-			if not play : 
+			if not evaluation : 
 				self.qtarget = CNN(self.env.observation_space.shape, self.env.action_space.n)
 
 
 		# Backpropagation function
-		if not play : 
+		if not evaluation : 
 			if adam:
 				optim_method = '_adam'
 				self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
@@ -78,6 +79,7 @@ class DQN():
 												alpha=0.95,
 												momentum=0.95)
 
+
 		# Error function
 		if mse:
 			loss_method = '_mse'
@@ -86,22 +88,33 @@ class DQN():
 			loss_method = '_huber'
 			self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
 
+
 		# Make the model using the GPU if available
-		use_cuda = torch.cuda.is_available()
-		if use_cuda:
+		if torch.cuda.is_available():
 			self.model.cuda()
-			self.qtarget.cuda()
+			if not evaluation: self.qtarget.cuda()
 			self.device = torch.device('cuda')
+		else:
+			self.device = torch.device('cpu')
+
+
+		if doubleq:
+			use_doubleq = '_doubleq'
+		else:
+			use_doubleq = ''
 
 		# Path to the logs folder
 		specs = optim_method + loss_method  +  use_doubleq  + use_dueling
+
 		# See if training has been made with this configuration
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn' + specs + '*.txt')) + 1)
 
+		# Path for the saves
 		self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
 		self.path_save = 'playground/atari/save/dqn' + specs
 		self.path_fig = 'playground/atari/fig/dqn' + specs
-		config.save_config('playground/atari/log/dqn-config' + specs + '.txt', env)
+		if not evaluation:
+			config.save_config('playground/atari/log/dqn-config' + specs + '.txt', env)
 
 
 	"""
@@ -138,7 +151,6 @@ class DQN():
 		# Get a random batch from the memory
 		state, action, next_state, rewards, done = self.memory.sample()
 
-
 		# Q values predicted by the model 
 		pred = self.model(state).gather(1, action).squeeze()
 
@@ -153,10 +165,10 @@ class DQN():
 		# Apply Bellman equation
 		y = rewards + (1. - done) * self.gamma * max_q_target
 
-		# loss is measured from error between current and newly expected Q values
+		# Loss is measured from error between current and newly expected Q values
 		loss = self.__loss_fn(y, pred)
 
-		# backpropagation of loss to NN
+		# Backpropagation of loss to NN
 		self.__optimizer.zero_grad()
 		loss.backward()
 		for param in self.model.parameters():
@@ -183,12 +195,47 @@ class DQN():
 		with open(self.path_log, "a") as f:
 			f.write(string + "\n")
 
+
+
+	"""
+	Evaluate the model during the training
+	"""
+	def evaluation(self, num_episodes=30):
+
+		self.model.eval()
+
+		for _ in range(num_episodes):
+			episode_reward = 0.0
+			done = False
+			state = self.env.reset()
+			for _ in range(10):
+				state, _, done, _ = self.env.step(0)
+				if done:
+					state = self.env.reset(**kwargs)
+
+			while not done:
+				action = self.get_policy(state)
+
+				# Get the output of env from this action
+				state, reward, done, _ = self.env.step(action)
+
+				episode_reward += reward
+
+			sum_reward += episode_reward
+			
+		self.plot_eval.append(sum_reward)
+		mean = sum_reward / num_episodes
+		self.log("## EVALUATION --  avg_reward:{}".format(mean))
+
+		self.model.train()
+
+			
 	"""
 	Run n episode to train the model.
 	"""
 	def train(self, display=False):
-		step, episode = 0, 0
-		best = 0.0
+		step, episode, best = 0, 0, 0
+		step_evaluation = 20000
 
 		pbar = tqdm(total=self.num_steps)
 	
@@ -222,6 +269,9 @@ class DQN():
 					if not step % self.step_target_update:
 						self.qtarget.load_state_dict(self.model.state_dict())
 
+					if not step % step_evaluation:
+						self.evaluation()
+
 				step += 1
 				pbar.update()
 				episode_reward += reward
@@ -250,6 +300,7 @@ class DQN():
 		pbar.close()
 		self.env.close()
 		self.save_model(final=True)
+		self.figure()
 
 
 	"""
@@ -257,19 +308,13 @@ class DQN():
 	"""
 	def test(self, num_episodes=50, display=False, model_path=None):
 
-		if self.play:
+		if self.evaluation:
 			if model_path is None:
 				raise ValueError('No path model given.')
 			self.model = copy.deepcody(torch.load(model_path))
-		else:
-			self.log('\n')
-			self.log('#' * 50)
-			self.log('Evaluation')
-			self.log('\n')
-			
+	
 		self.model.eval()
 		self.plot_reward.clear()
-		previous_live = 5
 
 		for episode in range(1, num_episodes + 1):
 			# Run one episode until termination
@@ -288,10 +333,11 @@ class DQN():
 				episode_reward += reward
 
 
-			self.log("Episode {} -- reward:{} ".format(episode, episode_reward))
+			print("Episode {} -- reward:{} ".format(episode, episode_reward))
 			self.plot_reward.append(episode_reward)
 
 		self.env.close()
+		self.figure(train=False)
 
 
 	"""
@@ -309,6 +355,7 @@ class DQN():
 		ax1.set_ylabel('Reward')
 
 		ax2.plot(self.plot_reward)
+		ax2.plot(self.plot_eval)
 		ax2.set_xlabel('Episode')
 		ax2.set_ylabel('Reward')
 
@@ -318,4 +365,6 @@ class DQN():
 			path = self.path_fig + '.png'
 		else:
 			path = self.path_fig + '-eval.png'
+			plt.show()
 		plt.savefig(path)
+		
