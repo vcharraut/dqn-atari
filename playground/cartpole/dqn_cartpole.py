@@ -14,7 +14,7 @@ from playground.utils.model import Dense_NN
 PATH_LOG = 'playground/cartpole/fig/log.txt'
 
 
-class DQN():
+class DQN_Cartpole():
 
 	"""
 	Initiale the Gym environnement Cartpole-v1.
@@ -27,18 +27,28 @@ class DQN():
 		- step_target_update
 	"""
 
-	def __init__(self, config, play=False, record=False):
+	def __init__(self,
+				learning_rate,
+				hidden_layer,
+				gamma, 
+				batch_size,
+				step_target_update,
+				evaluation=False,
+				record=False):
 		# Gym environnement Cartpole
 		self.env = gym.make('CartPole-v1')
+
 		if record:
 			self.env = gym.wrappers.Monitor(
 				self.env, 'playground/cartpole/recording/', force=True)
 		
+
+		self.evaluation = evaluation
 		# List to save the rewards 
 		self.plot_reward = []
 
 		# Parameters
-		if not play:
+		if not evaluation:
 			self.learning_rate = learning_rate
 			self.hidden_layer = hidden_layer
 			self.gamma = gamma
@@ -52,11 +62,11 @@ class DQN():
 			self.memory = CartpoleMemory(50000)
 
 		# Dense neural network to compute the q-values
-		self.q_nn = Dense_NN(in_dim=self.env.observation_space.shape[0],
-					out_dim=self.env.action_space.n,
-					hidden_layer=hidden_layer)
+		self.model = Dense_NN(in_dim=self.env.observation_space.shape[0],
+							out_dim=self.env.action_space.n,
+							hidden_layer=hidden_layer)
 
-		if not play:
+		if not evaluation:
 			# Dense neural network to compute the q-target
 			self.q_target_nn = Dense_NN(in_dim=self.env.observation_space.shape[0],
 								out_dim=self.env.action_space.n,
@@ -64,15 +74,15 @@ class DQN():
 
 			# Backpropagation function
 			self.__optimizer = torch.optim.RMSprop(
-				self.q_nn.parameters(), lr=learning_rate)
+				self.model.parameters(), lr=learning_rate)
 
 			# Error function
 			self.__loss_fn = torch.nn.MSELoss(reduction='mean')
 
 		# Make the model using the GPU if available
 		if torch.cuda.is_available():
-			self.q_nn.cuda('cuda')
-			if not play:
+			self.model.cuda('cuda')
+			if not evaluation:
 				self.q_target_nn.cuda('cuda')
 			self.device = torch.device('cuda')
 		else: 
@@ -82,10 +92,10 @@ class DQN():
 	Get an action of the max qvalue from the model.
 	"""
 
-	def qvalue(self, state):
+	def get_policy(self, state):
 		with torch.no_grad():
 			x = torch.from_numpy(state).float().to(torch.device('cuda'))
-			return self.q_nn(x).argmax().item()
+			return self.model(x).argmax().item()
 
 
 	"""
@@ -101,7 +111,7 @@ class DQN():
 		if np.random.rand() < eps_threshold:
 			return self.env.action_space.sample(), eps_threshold
 		else:
-			return self.qvalue(state), eps_threshold
+			return self.get_policy(state), eps_threshold
 
 	"""
 	Train the model.
@@ -115,7 +125,7 @@ class DQN():
 
 		# Clone the q-values model to the q-targets model
 		if clone:
-			self.q_target_nn.load_state_dict(self.q_nn.state_dict())
+			self.q_target_nn.load_state_dict(self.model.state_dict())
 
 		# Get a random batch from the memory
 		state, action, next_state, rewards, done = self.memory.sample(self.bath_size)
@@ -127,7 +137,7 @@ class DQN():
 		done = torch.from_numpy(done).to(self.device)
 
 		# Q values predicted by the model
-		pred = self.q_nn(state).gather(1, action).squeeze()
+		pred = self.model(state).gather(1, action).squeeze()
 
 		with torch.no_grad():
 			# Expected Q values are estimated from actions which gives maximum Q value
@@ -143,7 +153,7 @@ class DQN():
 		# backpropagation of loss to NN
 		self.__optimizer.zero_grad()
 		loss.backward()
-		for param in self.q_nn.parameters():
+		for param in self.model.parameters():
 			param.grad.data.clamp_(-1, 1)
 		self.__optimizer.step()
 
@@ -160,7 +170,7 @@ class DQN():
                     self.gamma,
                     self.bath_size,
                     self.step_target_update)
-		torch.save(self.q_nn.state_dict(), path)
+		torch.save(self.model.state_dict(), path)
 
 	"""
 	Write a log into a file
@@ -279,7 +289,7 @@ class DQN():
 					self.env.render()
 
 				# Select one action
-				action = self.qvalue(state)
+				action = self.get_policy(state)
 
 				# Get the output of env from this action
 				state, reward, done, _ = self.env.step(action)
@@ -313,7 +323,39 @@ class DQN():
 	The figures are saved as file.
 	"""
 
-	def play(self, display=True, model_path=None):
+	def play(self, num_episodes=20, display=False, model_path=None):
+	
+		if self.evaluation:
+			if model_path is None:
+				raise ValueError('No path model given.')
+			self.model.load_state_dict(torch.load(model_path))
+	
+		self.model.eval()
+		self.plot_reward.clear()
+
+		for episode in range(1, num_episodes + 1):
+			# Run one episode until termination
+			episode_reward = 0
+			done = False
+			state = self.env.reset()
+			while not done:
+				if display:
+					self.env.render()
+
+				action = self.get_policy(state)
+
+				# Get the output of env from this action
+				state, reward, done, _ = self.env.step(action)
+
+				episode_reward += reward
+
+
+			print("Episode {} -- reward:{} ".format(episode, episode_reward))
+			self.plot_reward.append(episode_reward)
+
+		self.env.close()
+		self.figure(train=False)
+
 		
 
 	def figure(self, training, save=True):
@@ -368,23 +410,3 @@ class DQN():
 		else:
 			plt.show()
 
-	"""
-	Run the DQN algorithm to solve the Cartpole environnement.
-	"""
-
-	def run(self):
-		self.train(display=False)
-		self.play(display=False)
-		self.figure(training=True)
-		self.figure(training=False)
-
-
-hyperparams = []
-hyperparams.append([1e-2, 8, 0.99, 256, 10])
-hyperparams.append([1e-2, 8, 0.99, 256, 100])
-hyperparams.append([1e-2, 8, 0.99, 256, 1000])
-with tqdm(total=len(hyperparams)) as pbar:
-	for p in hyperparams:
-		agent = DQN_Cartpole(p[0], p[1], p[2], p[3], p[4])
-		agent.run()
-		pbar.update()
