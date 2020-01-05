@@ -16,16 +16,16 @@ class Config():
 
 	def __init__(self,
 				memory_capacity=1000000,
-				num_steps=6000000,
+				num_steps=int(50e6),
 				batch_size=32,
 				target_update=10000, 
 				start_learning=50000,
-				freq_learning=2,
-				learning_rate=0.00025,
+				freq_learning=4,
+				learning_rate=0.00001,
 				gamma=0.99,
-				epsilon_decay=500000,
+				epsilon_decay=1000000,
 				epsilon_start=1, 
-				epsilon_end=0.05):
+				epsilon_end=0.01):
 			   
 		self.memory_capacity = memory_capacity
 		self.num_steps = num_steps
@@ -84,11 +84,11 @@ class ConfigRainbow():
 
 	def __init__(self,
 				memory_capacity=1000000,
-				num_steps=int(6e6),
+				num_steps=int(50e6),
 				batch_size=32,
 				target_update=32000, 
 				start_learning=50000,
-				freq_learning=2,
+				freq_learning=4,
 				learning_rate=0.0000625,
 				adam_exp=0.00015,
 				gamma=0.99,
