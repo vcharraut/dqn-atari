@@ -9,6 +9,7 @@ Clone the code repo and install the requirements.
 
 ```
 git clone https://github.com/VCanete/DRL-Atari.git
+git checkout releasev1
 cd DRL-Atari
 python setup.py install
 pip install -r requirements.txt
