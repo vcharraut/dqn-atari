@@ -9,7 +9,7 @@ import glob
 from tqdm import tqdm
 import copy
 
-from playground.utils.wrapper import wrap_environment
+from playground.utils.wrapper import make_atari, wrap_deepmind
 from playground.utils.memory import PrioritizedReplayMemory
 from playground.utils.model import RainbowNetwork
 
@@ -20,10 +20,10 @@ class Rainbow():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a Rainbow.
 	"""
-	def __init__(self, env, config, adam, evaluation=False, record=False):
+	def __init__(self, env, config, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_environment(env)
+		self.env = wrap_deepmind(make_atari(env))
 
 		if record:
 			self.env = gym.wrappers.Monitor(
@@ -75,22 +75,12 @@ class Rainbow():
 		
 		# Backpropagation function
 		if not evaluation:
-			if adam:
-				optim_method = '_adam'
-				self.__optimizer = torch.optim.Adam(self.model.parameters(),
+			self.__optimizer = torch.optim.Adam(self.model.parameters(),
 												lr=config.learning_rate,
 												eps=config.adam_exp)
-			else:
-				optim_method = '_rmsprop'
-				self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-												lr=config.learning_rate,
-												eps=0.001,
-												alpha=0.95,
-												momentum=0.95)
 
 		# Make the model using the GPU if available
-		use_cuda = torch.cuda.is_available()
-		if use_cuda:
+		if torch.cuda.is_available():
 			self.model.cuda()
 			self.qtarget.cuda()
 			self.device = torch.device('cuda')
@@ -99,7 +89,7 @@ class Rainbow():
 
 		# Path to the logs folder
 		if not evaluation:
-			specs = optim_method 
+			specs = 'train' 
 		else:
 			specs = 'eval'
 		# See if training has been made with this configuration
@@ -231,7 +221,7 @@ class Rainbow():
 			for _ in range(10):
 				state, _, done, _ = self.env.step(0)
 				if done:
-					state = self.env.reset(**kwargs)
+					state = self.env.reset()
 
 			while not done:
 				action = self.get_policy(state)

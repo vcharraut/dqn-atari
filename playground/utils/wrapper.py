@@ -8,7 +8,7 @@ cv2.ocl.setUseOpenCL(False)
 # https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py
 
 class NoopResetEnv(gym.Wrapper):
-	def __init__(self, env, noop_max=10):
+	def __init__(self, env, noop_max=3):
 		"""Sample initial states by taking random number of no-ops on reset.
 		No-op is assumed to be action 0.
 		"""
@@ -284,7 +284,7 @@ class TimeLimit(gym.Wrapper):
 
 
 
-def make_atari(env_id, max_episode_steps=None):
+def make_atari(env_id, max_episode_steps=24000):
 	env = gym.make(env_id)
 	assert 'NoFrameskip' in env.spec.id
 	env = NoopResetEnv(env)

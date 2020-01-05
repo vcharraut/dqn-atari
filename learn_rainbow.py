@@ -5,7 +5,6 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Rainbow')
 parser.add_argument('--minimal', type=int, help='')
-parser.add_argument('--adam', type=int, help='')
 args = parser.parse_args()
 
 if args.minimal:
@@ -18,7 +17,7 @@ if args.minimal:
 else:
     config = ConfigRainbow()
 
-agent = Rainbow('BreakoutNoFrameskip-v4', config, adam=args.adam)
+agent = Rainbow('BreakoutNoFrameskip-v4', config)
 agent.train()
 agent.figure()
 agent.test()

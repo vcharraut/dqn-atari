@@ -8,7 +8,7 @@ import time
 import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import wrap_environment
+from playground.utils.wrapper import make_atari, wrap_deepmind
 from playground.utils.memory import ReplayMemory
 from playground.utils.model import CNN, Dueling_CNN
 
@@ -19,10 +19,10 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq, dueling, adam, mse, evaluation=False, record=False):
+	def __init__(self, env, config, doubleq, dueling, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_environment(env)
+		self.env = wrap_deepmin(make_atari(env))
 
 		if record:
 			self.env = gym.wrappers.Monitor(
@@ -67,26 +67,15 @@ class DQN():
 
 
 		# Backpropagation function
-		if not evaluation : 
-			if adam:
-				optim_method = '_adam'
-				self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
-			else:
-				optim_method = '_rmsprop'
-				self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-												lr=config.learning_rate,
-												eps=0.001,
-												alpha=0.95,
-												momentum=0.95)
+		if not evaluation: 
+			optim_method = '_adam'
+			self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
+
 
 
 		# Error function
-		if mse:
-			loss_method = '_mse'
-			self.__loss_fn = torch.nn.MSELoss(reduction='mean')
-		else:
-			loss_method = '_huber'
-			self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
+		loss_method = '_huber'
+		self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
 
 
 		# Make the model using the GPU if available
@@ -211,7 +200,7 @@ class DQN():
 			for _ in range(10):
 				state, _, done, _ = self.env.step(0)
 				if done:
-					state = self.env.reset(**kwargs)
+					state = self.env.reset()
 
 			while not done:
 				action = self.get_policy(state)
