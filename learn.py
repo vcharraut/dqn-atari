@@ -33,13 +33,13 @@ if args.env == 'cartpole':
 elif args.env == 'atari':
 	if args.algo == 'dqn':
 		config = Config()
-		agent = DQN('BreakoutNoFrameskip-v4', config, False, False, False, True, evaluation=True)
+		agent = DQN('BreakoutNoFrameskip-v4', config, False, False, False, True)
 	elif args.algo == 'dqn+':
 		config = Config()
-		agent = DQN('BreakoutNoFrameskip-v4', config, True, True, False, True, evaluation=True)
+		agent = DQN('BreakoutNoFrameskip-v4', config, True, True, False, True)
 	elif args.algo == 'rainbow':
 		config = ConfigRainbow()
-		agent = Rainbow('BreakoutNoFrameskip-v4', config, True, evaluation=True, record=True)
+		agent = Rainbow('BreakoutNoFrameskip-v4', config)
 		agent.test(display=display, model_path='playground/atari/save/rainbow_adam_1.pt')
 	else:
 		raise ValueError('Algo is not valid')

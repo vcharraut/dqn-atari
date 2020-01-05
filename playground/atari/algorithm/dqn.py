@@ -8,7 +8,7 @@ import time
 import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import make_atari, wrap_deepmind
+from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import ReplayMemory
 from playground.utils.model import CNN, Dueling_CNN
 
@@ -22,7 +22,7 @@ class DQN():
 	def __init__(self, env, config, doubleq, dueling, adam, mse, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_deepmind(make_atari(env, evaluation=evaluation))
+		self.env = wrap_environment(env)
 
 		if record:
 			self.env = gym.wrappers.Monitor(

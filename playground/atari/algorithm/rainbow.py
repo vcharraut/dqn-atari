@@ -9,8 +9,7 @@ import glob
 from tqdm import tqdm
 import copy
 
-# from playground.utils.wrapper import make_atari, wrap_deepmind
-from playground.utils.wrappers2 import wrap_environment
+from playground.utils.wrapper import wrap_environment
 from playground.utils.memory import PrioritizedReplayMemory
 from playground.utils.model import RainbowNetwork
 
@@ -24,7 +23,6 @@ class Rainbow():
 	def __init__(self, env, config, adam, evaluation=False, record=False):
 
 		# Gym environnement
-		# self.env = wrap_deepmind(make_atari(env))
 		self.env = wrap_environment(env)
 
 		if record:
