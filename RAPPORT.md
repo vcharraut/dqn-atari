@@ -33,8 +33,7 @@ Deux entraînements avec des hyperparamètres similaires peuvent présenter des 
 
 ## Breakout
 
-L'implémentation du DQN pour les environnements Atari n'est pas si différente. Il faut rajouter un CNN pour pouvoir traiter les images.
-
+L'implémentation du DQN pour les environnements Atari n'est pas si différente. Il faut rajouter un CNN pour pouvoir traiter les images. Il y a aussi les wrappers, qui ont implémenté de manière identique au papier *Human-level control through deep reinforcement learning*.
 La différence se fait surtout dans la gestion des ressources, qui m'a longtemps posé problème. D'abord implémenter un stockage plus efficace pour l'expérience-replay, en ne stockant que le state et non le next-state, car on peut le retrouver plus facilement.
 Ensuite les temps de calculs sont très longs afin d'avoir le moindre résultat. Sur beaucoup des premiers essais, il fallait 10 à 15h de calculs pour voir l'agent arrive vers les 10 de scores.
 
