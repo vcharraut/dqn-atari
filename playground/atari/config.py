@@ -15,7 +15,7 @@
 class Config():
 
 	def __init__(self,
-				memory_capacity=1000000,
+				memory_capacity=600000,
 				num_steps=int(50e6),
 				batch_size=32,
 				target_update=10000, 

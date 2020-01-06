@@ -186,7 +186,7 @@ class DQN():
 	def evaluation(self, num_episodes=30):
 
 		self.model.eval()
-
+		sum_reward = 0.0
 		for _ in range(num_episodes):
 			episode_reward = 0.0
 			done = False
