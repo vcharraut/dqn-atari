@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import copy
 import glob
 from tqdm import tqdm
 
@@ -294,7 +295,7 @@ class DQN():
 		if self._evaluation:
 			if model_path is None:
 				raise ValueError('No path model given.')
-			self.model = copy.deepcody(torch.load(model_path))
+			self.model.load_state_dict(torch.load(model_path))
 	
 		self.model.eval()
 		self.plot_reward.clear()

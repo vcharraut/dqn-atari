@@ -28,9 +28,9 @@ elif args.env == 'atari':
 		config = Config()
 		agent = DQN('BreakoutNoFrameskip-v4', config, False, False, False, True, evaluation=True, record=record)
 	elif args.algo == 'dqn+':
-		print("No model saved yet.")
 		config = Config()
-		agent = DQN('BreakoutNoFrameskip-v4', config, True, True, False, True, evaluation=True, record=record)
+		agent = DQN('BreakoutNoFrameskip-v4', config, True, True, evaluation=True, record=record)
+		agent.test(display=False, model_path='playground/atari/save/dqn_doubleq_dueling_1.pt')
 	elif args.algo == 'rainbow':
 		config = ConfigRainbow()
 		agent = Rainbow('BreakoutNoFrameskip-v4', config, True, evaluation=True, record=record)
