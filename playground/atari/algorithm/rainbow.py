@@ -30,7 +30,7 @@ class Rainbow():
 				self.env, 'playground/atari/recording/rainbow', force=True)
 
 
-		self.evaluation = evaluation
+		self._evaluation = evaluation
 
 		# Parameters
 		self.gamma = config.gamma
@@ -89,9 +89,9 @@ class Rainbow():
 
 		# Path to the logs folder
 		if not evaluation:
-			specs = 'train' 
+			specs = '_train' 
 		else:
-			specs = 'eval'
+			specs = '_eval'
 		# See if training has been made with this configuration
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'rainbow' + specs + '*.txt')) + 1)
 
@@ -213,12 +213,14 @@ class Rainbow():
 	def evaluation(self, num_episodes=20):
 
 		self.model.eval()
+		sum_reward = 0.0
 
 		for _ in range(num_episodes):
 			episode_reward = 0.0
+			noops = np.random.randint(10)
 			done = False
 			state = self.env.reset()
-			for _ in range(10):
+			for _ in range(noops):
 				state, _, done, _ = self.env.step(0)
 				if done:
 					state = self.env.reset()
@@ -324,7 +326,7 @@ class Rainbow():
 	"""
 	def test(self, num_episodes=10, display=False, model_path=None):
 
-		if self.evaluation:
+		if self._evaluation:
 			if model_path is None:
 				raise ValueError('No path model given.')
 			self.model.load_state_dict(torch.load(model_path))
