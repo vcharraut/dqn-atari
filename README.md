@@ -23,7 +23,13 @@ To display an agent in cartpole:
 python play.py --env cartpole
 ```
 
-To display an agent in breakout:
+To display an agent in breakout with the dqn:
+
+```
+python play.py --env atari --algo dqn+
+```
+
+To display an agent in breakout with the rainbow:
 
 ```
 python play.py --env atari --algo rainbow

@@ -187,7 +187,7 @@ class DQN():
 	"""
 	Evaluate the model during the training
 	"""
-	def evaluation(self, num_episodes=30):
+	def evaluation(self, num_episodes=15):
 
 		self.model.eval()
 		sum_reward = 0.0
