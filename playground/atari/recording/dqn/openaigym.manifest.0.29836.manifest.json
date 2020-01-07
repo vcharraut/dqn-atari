@@ -1,1 +1,13 @@
-{"videos": [["openaigym.video.0.29836.video000000.mp4", "openaigym.video.0.29836.video000000.meta.json"], ["openaigym.video.0.29836.video000001.mp4", "openaigym.video.0.29836.video000001.meta.json"], ["openaigym.video.0.29836.video000008.mp4", "openaigym.video.0.29836.video000008.meta.json"], ["openaigym.video.0.29836.video000027.mp4", "openaigym.video.0.29836.video000027.meta.json"]], "env_info": {"env_id": "BreakoutNoFrameskip-v4", "gym_version": "0.15.4"}, "stats": "openaigym.episode_batch.0.29836.stats.json"}
+{
+    "videos": [
+        ["openaigym.video.0.29836.video000000.mp4", "openaigym.video.0.29836.video000000.meta.json"],
+        ["openaigym.video.0.29836.video000001.mp4", "openaigym.video.0.29836.video000001.meta.json"],
+        ["openaigym.video.0.29836.video000008.mp4", "openaigym.video.0.29836.video000008.meta.json"],
+        ["openaigym.video.0.29836.video000027.mp4", "openaigym.video.0.29836.video000027.meta.json"]
+    ],
+    "env_info": {
+        "env_id": "BreakoutNoFrameskip-v4",
+        "gym_version": "0.15.4"
+    },
+    "stats": "openaigym.episode_batch.0.29836.stats.json"
+}

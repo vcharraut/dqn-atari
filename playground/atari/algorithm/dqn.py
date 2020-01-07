@@ -23,7 +23,10 @@ class DQN():
 	def __init__(self, env, config, doubleq, dueling, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_deepmind(make_atari(env))
+		if evaluation:
+			self.env = wrap_deepmind(make_atari(env), clip_rewards=False)
+		else:
+			self.env = wrap_deepmind(make_atari(env))
 
 		if record:
 			self.env = gym.wrappers.Monitor(
@@ -191,9 +194,10 @@ class DQN():
 		for _ in range(num_episodes):
 			episode_reward = 0.0
 			done = False
+			noops = np.random.randint(10)
 			state = self.env.reset()
 			for _ in range(10):
-				state, _, done, _ = self.env.step(0)
+				state, _, done, _ = self.env.step(noops)
 				if done:
 					state = self.env.reset()
 
