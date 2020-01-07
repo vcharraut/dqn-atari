@@ -5,10 +5,11 @@ import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import copy
 import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import wrap_environment
+from playground.utils.wrapper2 import make_atari, wrap_deepmind
 from playground.utils.memory import ReplayMemory
 from playground.utils.model import CNN, Dueling_CNN
 
@@ -19,17 +20,20 @@ class DQN():
 	Initiale the Gym environnement BreakoutNoFrameskip-v4.
 	The learning is done by a DQN.
 	"""
-	def __init__(self, env, config, doubleq, dueling, adam, mse, evaluation=False, record=False):
+	def __init__(self, env, config, doubleq, dueling, evaluation=False, record=False):
 
 		# Gym environnement
-		self.env = wrap_environment(env)
+		if evaluation:
+			self.env = wrap_deepmind(make_atari(env), clip_rewards=False)
+		else:
+			self.env = wrap_deepmind(make_atari(env))
 
 		if record:
 			self.env = gym.wrappers.Monitor(
 				self.env, 'playground/atari/recording/dqn', force=True)
 
 		# Are we in evaluation mode ? 
-		self.evaluation = evaluation
+		self._evaluation = evaluation
 		
 		if not evaluation : 
 			# Parameters
@@ -67,27 +71,10 @@ class DQN():
 
 
 		# Backpropagation function
-		if not evaluation : 
-			if adam:
-				optim_method = '_adam'
-				self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
-			else:
-				optim_method = '_rmsprop'
-				self.__optimizer =  torch.optim.RMSprop(self.model.parameters(),
-												lr=config.learning_rate,
-												eps=0.001,
-												alpha=0.95,
-												momentum=0.95)
-
+		self.__optimizer = torch.optim.Adam(self.model.parameters(), lr=config.learning_rate)
 
 		# Error function
-		if mse:
-			loss_method = '_mse'
-			self.__loss_fn = torch.nn.MSELoss(reduction='mean')
-		else:
-			loss_method = '_huber'
-			self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
-
+		self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
 
 		# Make the model using the GPU if available
 		if torch.cuda.is_available():
@@ -104,7 +91,7 @@ class DQN():
 			use_doubleq = ''
 
 		# Path to the logs folder
-		specs = optim_method + loss_method  +  use_doubleq  + use_dueling
+		specs = use_doubleq  + use_dueling
 
 		# See if training has been made with this configuration
 		specs += '_' + str(len(glob.glob1('playground/atari/log/', 'dqn' + specs + '*.txt')) + 1)
@@ -203,15 +190,16 @@ class DQN():
 	def evaluation(self, num_episodes=30):
 
 		self.model.eval()
-
+		sum_reward = 0.0
 		for _ in range(num_episodes):
 			episode_reward = 0.0
 			done = False
+			noops = np.random.randint(10)
 			state = self.env.reset()
 			for _ in range(10):
-				state, _, done, _ = self.env.step(0)
+				state, _, done, _ = self.env.step(noops)
 				if done:
-					state = self.env.reset(**kwargs)
+					state = self.env.reset()
 
 			while not done:
 				action = self.get_policy(state)
@@ -308,10 +296,10 @@ class DQN():
 	"""
 	def test(self, num_episodes=50, display=False, model_path=None):
 
-		if self.evaluation:
+		if self._evaluation:
 			if model_path is None:
 				raise ValueError('No path model given.')
-			self.model = copy.deepcody(torch.load(model_path))
+			self.model.load_state_dict(torch.load(model_path))
 	
 		self.model.eval()
 		self.plot_reward.clear()

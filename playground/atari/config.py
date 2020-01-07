@@ -1,31 +1,31 @@
 # Hyperparameters used for the training DQN 
-# memory_capacity = 150000
-# num_steps       = 4000000
+# memory_capacity = 600000
+# num_steps       = 50e6
 # batch_size      = 32
 # target_update   = 10000
-# start_learning  = 5000
-# freq_learning   = 2
-# learning_rate   = 0.00025
+# start_learning  = 50000
+# freq_learning   = 4
+# learning_rate   = 0.00001
 # gamma           = 0.99
-# epsilon_decay   = 200000
+# epsilon_decay   = 1000000
 # epsilon_start   = 1
-# epsilon_end     = 0.1
+# epsilon_end     = 0.01
 
 
 class Config():
 
 	def __init__(self,
-				memory_capacity=1000000,
-				num_steps=6000000,
+				memory_capacity=600000,
+				num_steps=int(50e6),
 				batch_size=32,
 				target_update=10000, 
 				start_learning=50000,
-				freq_learning=2,
-				learning_rate=0.00025,
+				freq_learning=4,
+				learning_rate=0.00001,
 				gamma=0.99,
-				epsilon_decay=500000,
+				epsilon_decay=1000000,
 				epsilon_start=1, 
-				epsilon_end=0.05):
+				epsilon_end=0.01):
 			   
 		self.memory_capacity = memory_capacity
 		self.num_steps = num_steps
