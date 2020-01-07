@@ -40,6 +40,8 @@ Ensuite les temps de calculs sont très longs afin d'avoir le moindre résultat.
 J'ai du coup essayer d'accélerer la converge de l'agent, ce que je n'ai pas réussi aujourd'hui.
 J'ai implémenté le Double Q Learning et le Dueling qui n'améliorent pas vraiment les résultats.
 
+AJOUT 07/01 : Après une modification des wrappers et un entraînement plus long, le dqn avec doubleq et dueing arrive a de bons résultats avec notemment la technique du tunnel. 
+
 J'ai repris une implémentation de Rainbow que j'ai trouvé sur internet, qui présente des résultats plus convaincants, comme le montre le graphique ci-dessous. Néanmoins, en comparant les résultats que j'ai par rapport aux graphes qu'on peut voir sur différents dépôts git, je pense qu'on peut obtenir une progression plus linéaire.
 
 Ainsi, l'implémentation de Rainbow est la seule qui m'a donné des résultats pour l'instant avec une moyenne de 75 de scores en évaluation. Le seul bémol est que je n'ai pas implémenté de stochasticité en début d'épisodes, donc le comportement de l'agent est toujours similaire.
