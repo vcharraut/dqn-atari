@@ -1,5 +1,10 @@
 # DRL-Atari
-Deep Renforcement Learning project made with Atari game. 
+
+# STATUS : WORK IN PROGRESS
+
+The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.
+For the moment, I've implemented myself the DQN, Double Q DQN and Dueling DQN.
+The benchmarks are on going.
 
 ----------------
 ## Setup 
@@ -29,7 +34,7 @@ To display an agent in breakout:
 python play.py --env atari --algo rainbow
 ```
 
-The recording are saved in $env_name/recording
+The recording are saved in playground/$env_name/recording
 
 ----------------
 ## Acknowledgements
