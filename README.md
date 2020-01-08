@@ -9,8 +9,8 @@ Clone the code repo and install the requirements.
 
 ```
 git clone https://github.com/VCanete/DRL-Atari.git
-git checkout releasev1
 cd DRL-Atari
+git checkout releasev1
 python setup.py install
 pip install -r requirements.txt
 ```
@@ -24,13 +24,13 @@ python play.py --env cartpole
 ```
 
 To display an agent in breakout with the dqn:
-
+Max reward : 397.
 ```
 python play.py --env atari --algo dqn+
 ```
 
 To display an agent in breakout with the rainbow:
-
+Max reward : 75.
 ```
 python play.py --env atari --algo rainbow
 ```
