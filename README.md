@@ -73,17 +73,25 @@ References
 ----------
 
 [1] [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)  
-[2] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461)  
+
+[2] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461) 
+
 [3] [Prioritized Experience Replay](http://arxiv.org/abs/1511.05952)  
+
 [4] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
+
 [5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
+
 [6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
+
 [7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
+
 [8] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298) 
+
 [9] [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783) 
+
 [10] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347) 
+
 [11] [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363) 
+
 [12] [Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/abs/1507.06527) 
-
-
-
