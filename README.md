@@ -6,7 +6,7 @@
 
 The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.
 
-**DQN :** 
+**Value based:** 
 - [x] DQN [[1]](#references)
 - [x] Double DQN [[2]](#references)
 - [ ] Prioritised Experience Replay [[3]](#references)
@@ -15,6 +15,15 @@ The goal of this repo is to implement RL algorithms and try to benchmarks them i
 - [ ] Distributional RL [[6]](#references)
 - [ ] Noisy Nets [[7]](#references)
 - [ ] Rainbow [[8]](#references)
+
+**Policy based:** 
+- [ ] A2C [[9]](#references)
+- [ ] A3C [[9]](#references)
+- [ ] PPO [[10]](#references)
+
+**Others:**
+- [ ] ICM [[11]](#references)
+- [ ] Deep Recurrent Q-Learning [[12]](#references)
 
 ----------------
 ## Setup 
@@ -71,4 +80,10 @@ References
 [6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
 [7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
 [8] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298) 
+[9] [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783) 
+[10] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347) 
+[11] [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363) 
+[12] [Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/abs/1507.06527) 
+
+
 
