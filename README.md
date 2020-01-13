@@ -1,10 +1,20 @@
 # DRL-Atari
 
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
 # STATUS : WORK IN PROGRESS
 
 The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.
-For the moment, I've implemented myself the DQN, Double Q DQN and Dueling DQN.
-The benchmarks are on going.
+
+**DQN :** 
+- [x] DQN [[1]](#references)
+- [x] Double DQN [[2]](#references)
+- [ ] Prioritised Experience Replay [[3]](#references)
+- [x] Dueling Network Architecture [[4]](#references)
+- [ ] Multi-step Returns [[5]](#references)
+- [ ] Distributional RL [[6]](#references)
+- [ ] Noisy Nets [[7]](#references)
+- [ ] Rainbow [[8]](#references)
 
 ----------------
 ## Setup 
@@ -48,4 +58,17 @@ The recording are saved in playground/$env_name/recording
 
 
 This project was made under the supervision of [Arthur Aubret](https://github.com/Aubret) for the AI master's degree of the University Lyon 1.
+
+
+References
+----------
+
+[1] [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)  
+[2] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461)  
+[3] [Prioritized Experience Replay](http://arxiv.org/abs/1511.05952)  
+[4] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
+[5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
+[6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
+[7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
+[8] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298) 
 
