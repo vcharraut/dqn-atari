@@ -1,6 +1,6 @@
 # DRL-Atari
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 # STATUS : WORK IN PROGRESS
 
