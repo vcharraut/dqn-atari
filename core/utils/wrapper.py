@@ -108,9 +108,7 @@ class EpisodicLifeEnv(gym.Wrapper):
 
 class MaxAndSkipEnv(gym.Wrapper):
     def __init__(self, env, skip=4):
-        """
-                Return only every `skip`-th frame.
-                """
+        """Return only every `skip`-th frame."""
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
         self._obs_buffer = np.zeros(
@@ -118,9 +116,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._skip = skip
 
     def step(self, action):
-        """
-                Repeat action, sum reward, and max over last observations.
-                """
+        """Repeat action, sum reward, and max over last observations."""
         total_reward = 0.0
         done = None
         for i in range(self._skip):
@@ -147,9 +143,7 @@ class ClipRewardEnv(gym.RewardWrapper):
         gym.RewardWrapper.__init__(self, env)
 
     def reward(self, reward):
-        """
-                Bin reward to {+1, 0, -1} by its sign.
-                """
+        """Bin reward to {+1, 0, -1} by its sign."""
         return np.sign(reward)
 
 
@@ -211,8 +205,7 @@ class WarpFrame(gym.ObservationWrapper):
 
 class FrameStack(gym.Wrapper):
     def __init__(self, env, k):
-        """
-                Stack k last frames.
+        """Stack k last frames.
         Returns lazy array, which is much more memory efficient.
         See Also
         --------
@@ -327,9 +320,7 @@ def wrap_deepmind(env, episode_life=True,
                   clip_rewards=True,
                   frame_stack=True,
                   scale=False):
-    """
-    Configure environment for DeepMind-style Atari.
-    """
+    """Configure environment for DeepMind-style Atari."""
     if episode_life:
         env = EpisodicLifeEnv(env)
     if 'FIRE' in env.unwrapped.get_action_meanings():

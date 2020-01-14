@@ -1,9 +1,7 @@
 import argparse
 
-from playground.atari.config import Config, ConfigRainbow
-from playground.atari.algorithm.rainbow import Rainbow
+from playground.atari.config import Config
 from playground.atari.algorithm.dqn import DQN
-from playground.cartpole.dqn_cartpole import DQN_Cartpole
 
 
 parser = argparse.ArgumentParser()
@@ -86,10 +84,9 @@ dict_env = {
 }
 
 if args.env not in dict_env:
-    raise('Environment name not recognized.')
+    raise TypeError('Environment name not recognized.')
 
 if args.algo == 'dqn':
-    print("No model saved yet.")
     config = Config()
     agent = DQN('BreakoutNoFrameskip-v4', config, False, False,
                 False, True, evaluation=True, record=record)
@@ -98,14 +95,8 @@ elif args.algo == 'dqn+':
     agent = DQN('BreakoutNoFrameskip-v4', config, True,
                 True, evaluation=True, record=record)
     agent.test(display=False,
-                model_path='playground/atari/save/dqn_doubleq_dueling_1.pt')
-elif args.algo == 'rainbow':
-    config = ConfigRainbow()
-    agent = Rainbow('BreakoutNoFrameskip-v4', config,
-                    True, evaluation=True, record=record)
-    agent.test(display=args.display,
-                model_path='playground/atari/save/rainbow_adam_1-final.pt')
+               model_path='playground/atari/save/' +
+               + 'dqn_doubleq_dueling_1.pt')
+
 else:
-    raise ValueError('Algo is not valid')
-else:
-    raise ValueError('Environnement is not valid')
+    raise TypeError('Algo is not valid')
