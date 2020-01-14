@@ -60,7 +60,8 @@ The recording are saved in playground/$env_name/recording
 ## Results
 
 Evaluation is made only on Breakout for the moment.
-All use of the algorithms are incremental. (Example : Dueling is incremental version of DoubleQ DQN)
+All use of the algorithms are incremental.  
+(*Example : Dueling is incremental version of DoubleQ DQN*)
 
 |   Algorithm  | Max reward |
 |:------------:|:----------:|
