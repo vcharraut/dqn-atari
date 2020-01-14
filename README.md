@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ## Run the agents
 
 ```
-python play.py --do play --env breakout --algo dueling
+python main.py --do play --env breakout --algo dueling
 ```
 
 The recording are saved in playground/$env_name/recording
