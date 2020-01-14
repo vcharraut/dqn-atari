@@ -33,7 +33,6 @@ Clone the code repo and install the requirements.
 
 ```
 git clone https://github.com/VCanete/DRL-Atari.git
-git checkout releasev1
 cd DRL-Atari
 python setup.py install
 pip install -r requirements.txt
@@ -41,16 +40,8 @@ pip install -r requirements.txt
 ----------------
 ## Run the agents
 
-To display an agent in cartpole:
-
 ```
-python play.py --env cartpole
-```
-
-To display an agent in breakout:
-
-```
-python play.py --env atari --algo rainbow
+python play.py --do play --env breakout --algo dueling
 ```
 
 The recording are saved in playground/$env_name/recording
