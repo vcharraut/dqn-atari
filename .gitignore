@@ -1,9 +1,9 @@
 build/
 dist/
-playground.egg-info/
+core.egg-info/
 .vscode/
-playground/__pycache__
-playground/atari/__pycache__
-playground/atari/algorithm/__pycache__
-playground/utils/__pycache__
+core/__pycache__
+core/atari/__pycache__
+core/atari/algorithm/__pycache__
+core/utils/__pycache__
 drl/

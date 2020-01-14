@@ -8,9 +8,9 @@ import time
 import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import make_atari, wrap_deepmind
-from playground.utils.memory import ReplayMemory
-from playground.utils.model import CNN, Dueling_CNN
+from core.utils.wrapper import make_atari, wrap_deepmind
+from core.utils.memory import ReplayMemory
+from core.utils.model import CNN, Dueling_CNN
 
 
 class DQN():
@@ -36,7 +36,7 @@ class DQN():
 
         if record:
             self.env = gym.wrappers.Monitor(
-                self.env, 'playground/atari/recording/dqn', force=True)
+                self.env, 'core/atari/recording/dqn', force=True)
 
         # Are we in evaluation mode
         self._evaluation = evaluation
@@ -95,26 +95,18 @@ class DQN():
         else:
             self.device = torch.device('cpu')
 
-        if doubleq:
-            use_doubleq = '_doubleq'
-        else:
-            use_doubleq = ''
-
-        # Path to the logs folder
-        specs = use_doubleq + use_dueling
-
         # See if training has been made with this configuration
-        specs += '_' + \
-            str(len(glob.glob1('playground/atari/log/dqn' + specs
-                               + '*.txt')) + 1)
+        # specs += '_' + \
+        #    str(len(glob.glob1('core/atari/log/dqn' + specs + '*.txt')) + 1)
 
+        specs = ''
         # Path for the saves
-        self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
-        self.path_save = 'playground/atari/save/dqn' + specs
-        self.path_fig = 'playground/atari/fig/dqn' + specs
+        self.path_log = 'core/atari/log/dqn' + specs + '.txt'
+        self.path_save = 'core/atari/save/dqn' + specs
+        self.path_fig = 'core/atari/fig/dqn' + specs
         if not evaluation:
             config.save_config(
-                'playground/atari/log/dqn-config' + specs + '.txt', env)
+                'core/atari/log/dqn-config' + specs + '.txt', env)
 
     """
     Get the action for the qvalue given a state

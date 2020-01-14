@@ -1,7 +1,7 @@
 import argparse
 
-from playground.atari.config import Config
-from playground.atari.algorithm.dqn import DQN
+from core.atari.config import Config
+from core.atari.algorithm.dqn import DQN
 
 
 parser = argparse.ArgumentParser()
@@ -87,16 +87,15 @@ if args.env not in dict_env:
     raise TypeError('Environment name not recognized.')
 
 if args.algo == 'dqn':
+    print('No agent trained yet.')
+elif args.algo == 'doubleq':
+    print('No agent trained yet.')
+elif args.algo == 'dueling':
     config = Config()
-    agent = DQN('BreakoutNoFrameskip-v4', config, False, False,
-                False, True, evaluation=True, record=record)
-elif args.algo == 'dqn+':
-    config = Config()
-    agent = DQN('BreakoutNoFrameskip-v4', config, True,
+    agent = DQN(dict_env[args.env], config, True,
                 True, evaluation=True, record=record)
     agent.test(display=False,
-               model_path='playground/atari/save/' +
-               + 'dqn_doubleq_dueling_1.pt')
+               model_path='core/atari/save/dqn_doubleq_dueling_1.pt')
 
 else:
     raise TypeError('Algo is not valid')
