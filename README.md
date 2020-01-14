@@ -4,7 +4,8 @@
 
 # STATUS : WORK IN PROGRESS
 
-The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.
+The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.  
+Made in Python witht the framework PyTorch.
 
 **Value based:** 
 - [x] DQN [[1]](#references)
