@@ -65,14 +65,12 @@ class DQN():
 
         # Architecture of the neural networks
         if dueling:
-            use_dueling = '_dueling'
             self.model = Dueling_CNN(
                 self.env.observation_space.shape, self.env.action_space.n)
             if not evaluation:
                 self.qtarget = Dueling_CNN(
                     self.env.observation_space.shape, self.env.action_space.n)
         else:
-            use_dueling = ''
             self.model = CNN(self.env.observation_space.shape,
                              self.env.action_space.n)
             if not evaluation:
@@ -310,7 +308,9 @@ class DQN():
         if self._evaluation:
             if model_path is None:
                 raise ValueError('No path model given.')
-            self.model.load_state_dict(torch.load(model_path))
+            self.model.load_state_dict(
+                torch.load(model_path, map_location=self.device)
+            )
 
         self.model.eval()
         self.plot_reward.clear()
