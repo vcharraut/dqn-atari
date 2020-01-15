@@ -149,10 +149,9 @@ class Base():
         for _ in range(num_episodes):
             episode_reward = 0.0
             done = False
-            noops = np.random.randint(10)
             state = self.env.reset()
             for _ in range(10):
-                state, _, done, _ = self.env.step(noops)
+                state, _, done, _ = self.env.step(np.random.randint(10))
                 if done:
                     state = self.env.reset()
 

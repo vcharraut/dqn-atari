@@ -10,7 +10,7 @@ cv2.ocl.setUseOpenCL(False)
 
 
 class NoopResetEnv(gym.Wrapper):
-    def __init__(self, env, noop_max=3):
+    def __init__(self, env, noop_max=10):
         """
         Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
