@@ -2,10 +2,12 @@ import argparse
 
 from core.atari.config import Config
 from core.atari.algorithm.dqn import DQN
+from core.atari.algorithm.double_q_dqn import DoubleQ_DQN
+from core.atari.algorithm.dueling_dqn import Dueling_DQN
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--do', type=str, default='play',
+parser.add_argument('--train', action='store_true',
                     help='Train a new agent or show a trained one')
 parser.add_argument('--env', type=str, default='breakout',
                     help='Gym environment')
@@ -20,6 +22,7 @@ args = parser.parse_args()
 
 display = args.display
 record = args.record
+train = args.train
 
 dict_env = {
     'airaid': 'AirRaid-v0',
@@ -87,15 +90,28 @@ if args.env not in dict_env:
     raise TypeError('Environment name not recognized.')
 
 if args.algo == 'dqn':
-    print('No agent trained yet.')
+    agent = DQN(dict_env[args.env], Config(),
+                train=train, record=record)
+    if train:
+        agent.train()
+    else:
+        print('No agent trained yet.')
+
 elif args.algo == 'doubleq':
-    print('No agent trained yet.')
+    agent = DoubleQ_DQN(dict_env[args.env], Config(),
+                        train=train, record=record)
+    if train:
+        agent.train()
+    else:
+        print('No agent trained yet.')
 elif args.algo == 'dueling':
-    config = Config()
-    agent = DQN(dict_env[args.env], config, True,
-                True, evaluation=True, record=record)
-    agent.test(display=False,
-               model_path='core/atari/save/dqn_doubleq_dueling_1.pt')
+    agent = Dueling_DQN(dict_env[args.env], Config(),
+                        train=train, record=record)
+    if train:
+        agent.train()
+    else:
+        agent.test(display=False,
+                   model_path='core/atari/save/dqn_doubleq_dueling_1.pt')
 
 else:
     raise TypeError('Algo is not valid')

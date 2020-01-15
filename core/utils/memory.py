@@ -1,44 +1,14 @@
 import torch
 from random import sample
 from collections import deque
-import numpy as np
-
-
-class CartpoleMemory():
-
-    def __init__(self, capacity):
-        self.memory = deque(maxlen=capacity)
-
-    def push(self, state, action, next_state, reward, done):
-        self.memory.append((state, action, reward, next_state, done))
-
-    """
-    Return a random sample from self.memory of len = number
-    """
-
-    def sample(self, number):
-        batch = sample(self.memory, number)
-
-        # Unwrap the batch to get the variables
-        state, action, next_state, reward, done = zip(*batch)
-
-        return (np.array(state, dtype=np.float32),
-                np.array(action),
-                np.array(reward, dtype=np.float32),
-                np.array(next_state, dtype=np.float32),
-                np.array(done, dtype=np.uint8))
-
-    @property
-    def size(self):
-        return len(self.memory)
 
 
 class ReplayMemory():
 
-    def __init__(self, config):
+    def __init__(self, config, device):
         self.capacity = config.memory_capacity
         self.memory = deque(maxlen=self.capacity)
-        self.device = torch.device('cuda')
+        self.device = device
         self.batch_size = config.batch_size
 
         self.states = torch.empty((self.batch_size, 4, 84, 84)).to(self.device)

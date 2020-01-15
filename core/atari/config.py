@@ -19,7 +19,7 @@ class Config():
                  num_steps=int(25e6),
                  batch_size=32,
                  target_update=10000,
-                 start_learning=50000,
+                 start_learning=5000,
                  freq_learning=4,
                  learning_rate=0.00001,
                  gamma=0.99,

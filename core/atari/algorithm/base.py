@@ -5,43 +5,41 @@ import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
-import glob
 from tqdm import tqdm
 
-from playground.utils.wrapper import make_atari, wrap_deepmind
-from playground.utils.memory import ReplayMemory
-from playground.utils.model import CNN, Dueling_CNN
+from core.utils.wrapper import make_atari, wrap_deepmind
 
 
-class DQN():
+class Base():
 
     """
-    Initiale the Gym environnement BreakoutNoFrameskip-v4.
-    The learning is done by a DQN.
+    Base class for the impletation of the DQN algorithms.
     """
 
     def __init__(self,
                  env,
                  config,
-                 doubleq,
-                 dueling,
-                 evaluation=False,
-                 record=False):
+                 train,
+                 record):
+
+        # Class name
+        class_name = type(self).__name__
 
         # Gym environnement
-        if evaluation:
-            self.env = wrap_deepmind(make_atari(env), clip_rewards=False)
-        else:
+        if train:
             self.env = wrap_deepmind(make_atari(env))
+        else:
+            self.env = wrap_deepmind(make_atari(env), clip_rewards=False)
 
         if record:
             self.env = gym.wrappers.Monitor(
-                self.env, 'playground/atari/recording/dqn', force=True)
+                self.env, 'core/atari/recording/' + class_name,
+                force=True)
 
         # Are we in evaluation mode
-        self._evaluation = evaluation
+        self._train = train
 
-        if not evaluation:
+        if train:
             # Parameters
             self.gamma = config.gamma
             self.bath_size = config.batch_size
@@ -54,34 +52,14 @@ class DQN():
             self.start_learning = config.start_learning
 
             # Experience-Replay
-            self.memory = ReplayMemory(config)
-
-        # Architecture parameters
-        self.doubleq = doubleq
+            self.memory = None
 
         # List to save the rewards
         self.plot_reward = []
         self.plot_eval = []
 
         # Architecture of the neural networks
-        if dueling:
-            use_dueling = '_dueling'
-            self.model = Dueling_CNN(
-                self.env.observation_space.shape, self.env.action_space.n)
-            if not evaluation:
-                self.qtarget = Dueling_CNN(
-                    self.env.observation_space.shape, self.env.action_space.n)
-        else:
-            use_dueling = ''
-            self.model = CNN(self.env.observation_space.shape,
-                             self.env.action_space.n)
-            if not evaluation:
-                self.qtarget = CNN(
-                    self.env.observation_space.shape, self.env.action_space.n)
-
-        # Backpropagation function
-        self.__optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=config.learning_rate)
+        self.model = None
 
         # Error function
         self.__loss_fn = torch.nn.SmoothL1Loss(reduction='mean')
@@ -89,32 +67,26 @@ class DQN():
         # Make the model using the GPU if available
         if torch.cuda.is_available():
             self.model.cuda()
-            if not evaluation:
+            if train:
                 self.qtarget.cuda()
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
 
-        if doubleq:
-            use_doubleq = '_doubleq'
-        else:
-            use_doubleq = ''
-
-        # Path to the logs folder
-        specs = use_doubleq + use_dueling
-
         # See if training has been made with this configuration
-        specs += '_' + \
-            str(len(glob.glob1('playground/atari/log/dqn' + specs
+        """
+        class_name += '-' + \
+            str(len(glob.glob1('core/atari/log/' + class_name
                                + '*.txt')) + 1)
+        """
 
         # Path for the saves
-        self.path_log = 'playground/atari/log/dqn' + specs + '.txt'
-        self.path_save = 'playground/atari/save/dqn' + specs
-        self.path_fig = 'playground/atari/fig/dqn' + specs
-        if not evaluation:
+        self.path_log = 'core/atari/log/' + class_name + '.txt'
+        self.path_save = 'core/atari/save/' + class_name
+        self.path_fig = 'core/atari/fig/' + class_name
+        if train:
             config.save_config(
-                'playground/atari/log/dqn-config' + specs + '.txt', env)
+                'core/atari/log/config-' + class_name + '.txt', env)
 
     """
     Get the action for the qvalue given a state
@@ -148,7 +120,7 @@ class DQN():
     """
 
     def learn(self):
-        print("To be overrided.")
+        pass
 
     """
     Save the model.
@@ -174,7 +146,7 @@ class DQN():
     Evaluate the model during the training
     """
 
-    def evaluation(self, num_episodes=30):
+    def valid(self, num_episodes=30):
         self.model.eval()
         sum_reward = 0.0
         for _ in range(num_episodes):
@@ -244,7 +216,7 @@ class DQN():
                         self.qtarget.load_state_dict(self.model.state_dict())
 
                     if not step % step_evaluation:
-                        self.evaluation()
+                        self.valid()
 
                 step += 1
                 pbar.update()
@@ -282,9 +254,10 @@ class DQN():
     """
     Eval a trained model for n episodes.
     """
-    def test(self, num_episodes=50, display=False, model_path=None):
 
-        if self._evaluation:
+    def test(self, num_episodes=20, display=False, model_path=None):
+
+        if not self._train:
             if model_path is None:
                 raise ValueError('No path model given.')
             self.model.load_state_dict(torch.load(model_path))
