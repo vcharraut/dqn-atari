@@ -66,9 +66,6 @@ class Base():
 
         # Make the model using the GPU if available
         if torch.cuda.is_available():
-            self.model.cuda()
-            if train:
-                self.qtarget.cuda()
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')

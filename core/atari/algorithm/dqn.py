@@ -33,6 +33,11 @@ class DQN(Base):
         self.__optimizer = torch.optim.Adam(
             self.model.parameters(), lr=config.learning_rate)
 
+        if torch.cuda.is_available():
+            self.model.cuda()
+            if train:
+                self.qtarget.cuda()
+
     """
     Train the model.
     """
