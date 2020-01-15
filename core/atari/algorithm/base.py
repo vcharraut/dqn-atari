@@ -23,13 +23,10 @@ class Base():
                  record):
 
         # Class name
-        class_name = type(self).__name__
+        class_name = type(self).__name__.lower()
 
         # Gym environnement
-        if train:
-            self.env = wrap_deepmind(make_atari(env))
-        else:
-            self.env = wrap_deepmind(make_atari(env), clip_rewards=False)
+        self.env = wrap_deepmind(make_atari(env))
 
         if record:
             self.env = gym.wrappers.Monitor(
@@ -71,11 +68,7 @@ class Base():
             self.device = torch.device('cpu')
 
         # See if training has been made with this configuration
-        """
-        class_name += '-' + \
-            str(len(glob.glob1('core/atari/log/' + class_name
-                               + '*.txt')) + 1)
-        """
+        class_name += '_' + env.partition('No')[0].lower()
 
         # Path for the saves
         self.path_log = 'core/atari/log/' + class_name + '.txt'
@@ -150,8 +143,8 @@ class Base():
             episode_reward = 0.0
             done = False
             state = self.env.reset()
-            for _ in range(10):
-                state, _, done, _ = self.env.step(np.random.randint(10))
+            for _ in range(np.random.randint(10)):
+                state, _, done, _ = self.env.step(0)
                 if done:
                     state = self.env.reset()
 
@@ -175,9 +168,9 @@ class Base():
     Run n episode to train the model.
     """
 
-    def train(self, display=False):
+    def train(self, display):
         step, episode, best = 0, 0, 0
-        step_evaluation = 20000
+        step_evaluation = 200000
 
         pbar = tqdm(total=self.num_steps)
 
@@ -199,8 +192,10 @@ class Base():
                 # Get the output of env from this action
                 next_state, reward, done, _ = self.env.step(action)
 
+                clipped_reward = np.sign(reward)
+
                 # Push the output to the memory
-                self.memory.push(next_state, action, reward, done)
+                self.memory.push(next_state, action, clipped_reward, done)
 
                 # Learn
                 if step >= self.start_learning:
@@ -264,8 +259,15 @@ class Base():
         for episode in range(1, num_episodes + 1):
             # Run one episode until termination
             episode_reward = 0
+            test = 0
             done = False
             state = self.env.reset()
+
+            for _ in range(np.random.randint(10)):
+                state, _, done, _ = self.env.step(0)
+                if done:
+                    state = self.env.reset()
+
             while not done:
                 if display:
                     self.env.render()
@@ -277,7 +279,7 @@ class Base():
 
                 episode_reward += reward
 
-            print("Episode {} -- reward:{} ".format(episode, episode_reward))
+            print("Episode {} -- reward:{} -- test:{} ".format(episode, episode_reward, test))
             self.plot_reward.append(episode_reward)
 
         self.env.close()

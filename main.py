@@ -25,65 +25,65 @@ record = args.record
 train = args.train
 
 dict_env = {
-    'airaid': 'AirRaid-v0',
-    'alien': 'Alien-v0',
-    'amidar': 'Amidar-v0',
-    'assault': 'Assault-v0',
-    'asterix': 'Asterix-v0',
-    'asteroids': 'Asteroids-v0',
-    'atlantis': 'Atlantis-v0',
-    'bankheist': 'BankHeist-v0',
-    'battlezone': 'BattleZone-v0',
-    'beamrider': 'BeamRider-v0',
-    'berkzerk': 'Berzerk-v0',
-    'bowling': 'Bowling-v0',
-    'boxing': 'Boxing-v0',
+    'airaid': 'AirRaidNoFrameskip-v4',
+    'alien': 'AlienNoFrameskip-v4',
+    'amidar': 'AmidarNoFrameskip-v4',
+    'assault': 'AssaultNoFrameskip-v4',
+    'asterix': 'AsterixNoFrameskip-v4',
+    'asteroids': 'AsteroidsNoFrameskip-v4',
+    'atlantis': 'AtlantisNoFrameskip-v4',
+    'bankheist': 'BankHeistNoFrameskip-v4',
+    'battlezone': 'BattleZoneNoFrameskip-v4',
+    'beamrider': 'BeamRiderNoFrameskip-v4',
+    'berkzerk': 'BerzerkNoFrameskip-v4',
+    'bowling': 'BowlingNoFrameskip-v4',
+    'boxing': 'BoxingNoFrameskip-v4',
     'breakout': 'BreakoutNoFrameskip-v4',
-    'carnival': 'Carnival-v0',
-    'centipete': 'Centipede-v0',
-    'choppercommand': 'ChopperCommand-v0',
-    'crazyclimber': 'CrazyClimber-v0',
-    'demonattack': 'DemonAttack-v0',
-    'doubledunk': 'DoubleDunk-v0',
-    'elevatoraction': 'ElevatorAction-v0',
-    'enduro': 'Enduro-v0',
-    'fishingderby': 'FishingDerby-v0',
-    'freeway': 'Freeway-v0',
-    'frostbite': 'Frosbite-v0',
-    'gopher': 'Gopher-v0',
-    'gravitar': 'Gravitar-v0',
-    'icehockey': 'IceHockey-v0',
-    'jamesbond': 'Jamesbond-v0',
-    'journeyescape': 'JourneyEscape-v0',
-    'kangaroo': 'Kangaroo-v0',
-    'krull': 'Krull-v0',
-    'kungfumaster': 'KungFuMaster-v0',
-    'montezumarevenge': 'MontezumaRevenge-v0',
-    'mspacman': 'MsPacman-v0',
-    'namethisgame': 'NameThisGame-v0',
-    'phoenix': 'Phoenix-v0',
-    'pitfall': 'Pitfall-v0',
-    'pong': 'Pong-v0',
-    'pooyan': 'Pooyan-v0',
-    'privateye': 'PrivateEye-v0',
-    'qbert': 'Qbert-v0',
-    'riverraid': 'Riverraid-v0',
-    'roadrunner': 'RoadRunner-v0',
-    'robotank': 'Robotank-v0',
-    'seaquest': 'Seaquest-v0',
-    'skiing': 'Skiing-v0',
-    'solaris': 'Solaris-v0',
-    'spaceinvaders': 'SpaceInvaders-v0',
-    'stargunner': 'StarGunner-v0',
-    'tennis': 'Tennis-v0',
-    'timepilot': 'TimePilot-v0',
-    'tutankham': 'Tutankham-v0',
-    'upndown': 'UpNDown-v0',
-    'venture': 'Venture-v0',
-    'videopinball': 'VideoPinball-v0',
-    'wizardofwor': 'WizardOfWor-v0',
-    'yarsrevenge': 'YarsRevenge-v0',
-    'zaxxon': 'Zaxxon-v0'
+    'carnival': 'CarnivalNoFrameskip-v4',
+    'centipete': 'CentipedeNoFrameskip-v4',
+    'choppercommand': 'ChopperCommandNoFrameskip-v4',
+    'crazyclimber': 'CrazyClimberNoFrameskip-v4',
+    'demonattack': 'DemonAttackNoFrameskip-v4',
+    'doubledunk': 'DoubleDunkNoFrameskip-v4',
+    'elevatoraction': 'ElevatorActionNoFrameskip-v4',
+    'enduro': 'EnduroNoFrameskip-v4',
+    'fishingderby': 'FishingDerbyNoFrameskip-v4',
+    'freeway': 'FreewayNoFrameskip-v4',
+    'frostbite': 'FrosbiteNoFrameskip-v4',
+    'gopher': 'GopherNoFrameskip-v4',
+    'gravitar': 'GravitarNoFrameskip-v4',
+    'icehockey': 'IceHockeyNoFrameskip-v4',
+    'jamesbond': 'JamesbondNoFrameskip-v4',
+    'journeyescape': 'JourneyEscapeNoFrameskip-v4',
+    'kangaroo': 'KangarooNoFrameskip-v4',
+    'krull': 'KrullNoFrameskip-v4',
+    'kungfumaster': 'KungFuMasterNoFrameskip-v4',
+    'montezumarevenge': 'MontezumaRevengeNoFrameskip-v4',
+    'mspacman': 'MsPacmanNoFrameskip-v4',
+    'namethisgame': 'NameThisGameNoFrameskip-v4',
+    'phoenix': 'PhoenixNoFrameskip-v4',
+    'pitfall': 'PitfallNoFrameskip-v4',
+    'pong': 'PongNoFrameskip-v4',
+    'pooyan': 'PooyanNoFrameskip-v4',
+    'privateye': 'PrivateEyeNoFrameskip-v4',
+    'qbert': 'QbertNoFrameskip-v4',
+    'riverraid': 'RiverraidNoFrameskip-v4',
+    'roadrunner': 'RoadRunnerNoFrameskip-v4',
+    'robotank': 'RobotankNoFrameskip-v4',
+    'seaquest': 'SeaquestNoFrameskip-v4',
+    'skiing': 'SkiingNoFrameskip-v4',
+    'solaris': 'SolarisNoFrameskip-v4',
+    'spaceinvaders': 'SpaceInvadersNoFrameskip-v4',
+    'stargunner': 'StarGunnerNoFrameskip-v4',
+    'tennis': 'TennisNoFrameskip-v4',
+    'timepilot': 'TimePilotNoFrameskip-v4',
+    'tutankham': 'TutankhamNoFrameskip-v4',
+    'upndown': 'UpNDownNoFrameskip-v4',
+    'venture': 'VentureNoFrameskip-v4',
+    'videopinball': 'VideoPinballNoFrameskip-v4',
+    'wizardofwor': 'WizardOfWorNoFrameskip-v4',
+    'yarsrevenge': 'YarsRevengeNoFrameskip-v4',
+    'zaxxon': 'ZaxxonNoFrameskip-v4'
 }
 
 if args.env not in dict_env:
@@ -93,7 +93,7 @@ if args.algo == 'dqn':
     agent = DQN(dict_env[args.env], Config(),
                 train=train, record=record)
     if train:
-        agent.train()
+        agent.train(display=display)
     else:
         print('No agent trained yet.')
 
@@ -101,17 +101,17 @@ elif args.algo == 'doubleq':
     agent = DoubleQ_DQN(dict_env[args.env], Config(),
                         train=train, record=record)
     if train:
-        agent.train()
+        agent.train(display=display)
     else:
         print('No agent trained yet.')
 elif args.algo == 'dueling':
     agent = Dueling_DQN(dict_env[args.env], Config(),
                         train=train, record=record)
     if train:
-        agent.train()
+        agent.train(display=display)
     else:
-        agent.test(display=False,
-                   model_path='core/atari/save/dqn_doubleq_dueling_1.pt')
+        agent.test(display=display,
+                   model_path='./save_model/dqn/dqn_doubleq_dueling_1.pt')
 
 else:
     raise TypeError('Algo is not valid')

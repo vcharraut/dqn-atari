@@ -10,7 +10,7 @@ cv2.ocl.setUseOpenCL(False)
 
 
 class NoopResetEnv(gym.Wrapper):
-    def __init__(self, env, noop_max=10):
+    def __init__(self, env, noop_max=15):
         """
         Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
@@ -306,7 +306,7 @@ class TimeLimit(gym.Wrapper):
         return self.env.reset(**kwargs)
 
 
-def make_atari(env_id, max_episode_steps=24000):
+def make_atari(env_id, max_episode_steps=18000):
     env = gym.make(env_id)
     assert 'NoFrameskip' in env.spec.id
     env = NoopResetEnv(env)
@@ -317,7 +317,7 @@ def make_atari(env_id, max_episode_steps=24000):
 
 
 def wrap_deepmind(env, episode_life=True,
-                  clip_rewards=True,
+                  clip_rewards=False,
                   frame_stack=True,
                   scale=False):
     """Configure environment for DeepMind-style Atari."""
