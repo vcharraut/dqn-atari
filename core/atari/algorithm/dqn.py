@@ -53,11 +53,7 @@ class DQN(Base):
         with torch.no_grad():
             # Expected Q values are estimated from actions
             # which gives maximum Q value
-
-            action_by_qvalue = self.model(
-                next_state).argmax(1).long().unsqueeze(-1)
-            max_q_target = self.qtarget(next_state).gather(
-                1, action_by_qvalue).squeeze()
+            max_q_target = self.qtarget(next_state).argmax(1)
 
         # Apply Bellman equation
         y = rewards + (1. - done) * self.gamma * max_q_target
