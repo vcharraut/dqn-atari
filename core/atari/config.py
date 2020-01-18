@@ -16,16 +16,16 @@ class Config():
 
     def __init__(self,
                  memory_capacity=600000,
-                 num_steps=int(25e6),
+                 num_steps=int(10e6),
                  batch_size=32,
                  target_update=10000,
                  start_learning=50000,
                  freq_learning=4,
-                 learning_rate=0.0000625,
+                 learning_rate=0.00001,
                  gamma=0.99,
                  epsilon_decay=1000000,
                  epsilon_start=1,
-                 epsilon_end=0.01):
+                 epsilon_end=0.001):
 
         self.memory_capacity = memory_capacity
         self.num_steps = num_steps
