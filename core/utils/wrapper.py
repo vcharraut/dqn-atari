@@ -131,7 +131,6 @@ class MaxAndSkipEnv(gym.Wrapper):
         # Note that the observation on the done=True frame
         # doesn't matter
         max_frame = self._obs_buffer.max(axis=0)
-
         return max_frame, total_reward, done, info
 
     def reset(self, **kwargs):
@@ -205,12 +204,7 @@ class WarpFrame(gym.ObservationWrapper):
 
 class FrameStack(gym.Wrapper):
     def __init__(self, env, k):
-        """Stack k last frames.
-        Returns lazy array, which is much more memory efficient.
-        See Also
-        --------
-        baselines.common.atari_wrappers.LazyFrames
-        """
+        """Stack k last frames."""
         gym.Wrapper.__init__(self, env)
         self.k = k
         self.frames = deque([], maxlen=k)
@@ -231,60 +225,7 @@ class FrameStack(gym.Wrapper):
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        return LazyFrames(list(self.frames))
-        # return np.array(self.frames).squeeze()
-
-
-class ScaledFloatFrame(gym.ObservationWrapper):
-    def __init__(self, env):
-        gym.ObservationWrapper.__init__(self, env)
-        self.observation_space = gym.spaces.Box(
-            low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
-
-    def observation(self, observation):
-        # careful! This undoes the memory optimization, use
-        # with smaller replay buffers only.
-        return np.array(observation).astype(np.float32) / 255.0
-
-
-class LazyFrames(object):
-    def __init__(self, frames):
-        """
-        This object ensures that common frames between
-                the observations are only stored once.
-        It exists purely to optimize memory usage which
-                can be huge for DQN's 1M frames replaybuffers.
-        This object should only be converted to numpy array
-                before being passed to the model.
-        You'd not believe how complex the previous solution was.
-        """
-        self._frames = frames
-        self._out = None
-
-    def _force(self):
-        if self._out is None:
-            self._out = np.array(self._frames).squeeze()
-            self._frames = None
-        return self._out
-
-    def __array__(self, dtype=None):
-        out = self._force()
-        if dtype is not None:
-            out = out.astype(dtype)
-        return out
-
-    def __len__(self):
-        return len(self._force())
-
-    def __getitem__(self, i):
-        return self._force()[i]
-
-    def count(self):
-        frames = self._force()
-        return frames.shape[frames.ndim - 1]
-
-    def frame(self, i):
-        return self._force()[..., i]
+        return np.array(self.frames).squeeze()
 
 
 class TimeLimit(gym.Wrapper):
@@ -318,16 +259,13 @@ def make_atari(env_id, max_episode_steps=18000):
 
 def wrap_deepmind(env, episode_life=True,
                   clip_rewards=False,
-                  frame_stack=True,
-                  scale=False):
+                  frame_stack=True):
     """Configure environment for DeepMind-style Atari."""
     if episode_life:
         env = EpisodicLifeEnv(env)
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = WarpFrame(env)
-    if scale:
-        env = ScaledFloatFrame(env)
     if clip_rewards:
         env = ClipRewardEnv(env)
     if frame_stack:

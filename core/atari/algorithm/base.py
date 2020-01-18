@@ -160,7 +160,7 @@ class Base():
 
         self.plot_eval.append(sum_reward)
         mean = sum_reward / num_episodes
-        self.log("## EVALUATION --  avg_reward:{}".format(mean))
+        self.log('## EVALUATION --  avg_reward:{}'.format(mean))
 
         self.model.train()
 
@@ -220,13 +220,13 @@ class Base():
                 mean_reward = sum(self.plot_reward[-20:]) / 20
                 max_reward = max(self.plot_reward[-20:])
                 if max_reward > best:
-                    self.log("Saving model, best reward :{}".format(
+                    self.log('Saving model, best reward :{}'.format(
                         max_reward
                     ))
                     self.save_model()
                     best = max_reward
-                self.log("Episode {} -- step:{} -- avg_reward:{} -- \
-                    best_reward:{} -- eps:{} -- time:{}".format(
+                self.log('Episode {} -- step:{} -- avg_reward:{} -- '
+                    'best_reward:{} -- eps:{} -- time:{}'.format(
                     episode,
                     step,
                     mean_reward,
@@ -279,7 +279,7 @@ class Base():
 
                 episode_reward += reward
 
-            print("Episode {} -- reward:{} -- test:{} ".format(episode, episode_reward, test))
+            print('Episode {} -- reward:{}'.format(episode, episode_reward, test))
             self.plot_reward.append(episode_reward)
 
         self.env.close()
