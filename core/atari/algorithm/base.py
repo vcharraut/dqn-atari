@@ -84,7 +84,7 @@ class Base():
 
     def get_policy(self, state):
         with torch.no_grad():
-            state = torch.from_numpy(state).float() \
+            state = torch.from_numpy(state.__array__()).float() \
                 .unsqueeze(0).to(self.device)
             return self.model(state).argmax().item()
 

@@ -231,8 +231,8 @@ class FrameStack(gym.Wrapper):
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        # return LazyFrames(list(self.frames))
-        return np.array(self.frames).squeeze()
+        return LazyFrames(list(self.frames))
+        # return np.array(self.frames).squeeze()
 
 
 class ScaledFloatFrame(gym.ObservationWrapper):
@@ -263,7 +263,7 @@ class LazyFrames(object):
 
     def _force(self):
         if self._out is None:
-            self._out = np.concatenate(self._frames, axis=-1)
+            self._out = np.array(self._frames).squeeze()
             self._frames = None
         return self._out
 

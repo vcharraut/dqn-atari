@@ -25,7 +25,7 @@ class Config():
                  gamma=0.99,
                  epsilon_decay=1000000,
                  epsilon_start=1,
-                 epsilon_end=0.001):
+                 epsilon_end=0.05):
 
         self.memory_capacity = memory_capacity
         self.num_steps = num_steps

@@ -13,9 +13,9 @@ parser.add_argument('--env', type=str, default='breakout',
                     help='Gym environment')
 parser.add_argument('--algo', type=str, default='dqn',
                     help='Algortihms to be used for the learning')
-parser.add_argument('--display', type=int, default=0,
+parser.add_argument('--display', action='store_true',
                     help='Display or not the agent in the environment')
-parser.add_argument('--record', type=int, default=0,
+parser.add_argument('--record', action='store_true',
                     help='Record or not the environment')
 
 args = parser.parse_args()
@@ -103,7 +103,8 @@ elif args.algo == 'doubleq':
     if train:
         agent.train(display=display)
     else:
-        print('No agent trained yet.')
+        agent.test(display=display,
+                   model_path='./core/atari/save/doubleq_dqn_breakout.pt')
 elif args.algo == 'dueling':
     agent = Dueling_DQN(dict_env[args.env], Config(),
                         train=train, record=record)
@@ -111,7 +112,7 @@ elif args.algo == 'dueling':
         agent.train(display=display)
     else:
         agent.test(display=display,
-                   model_path='./save_model/dqn/dqn_doubleq_dueling_1.pt')
+                   model_path='./save_model/dueling/dqn_doubleq_dueling_1.pt')
 
 else:
     raise TypeError('Algo is not valid')
