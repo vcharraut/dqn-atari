@@ -64,10 +64,8 @@ All use of the algorithms are incremental. (*Example : Dueling is incremental ve
 ## Acknowledgements
 
 
-- [@roclark](https://github.com/roclark) for [DQN](https://github.com/roclark/openai-gym-pytorch/)
 - [@lilianweng](https://github.com/lilianweng) for [DQN, Double DQN, Dueling Network Architecture](https://lilianweng.github.io/lil-log/2018/05/05/implementing-deep-reinforcement-learning-models.html)
 - [@fg91](https://github.com/fg91) for [DQN, Double DQN, Dueling Network Architecture](https://github.com/fg91/Deep-Q-Learning)
-- [@Kaixhin](https://github.com/Kaixhin) for [Rainbow implentation](https://github.com/Kaixhin/Rainbow)
   
 
 
