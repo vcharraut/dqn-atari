@@ -2,29 +2,13 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-# STATUS : WORK IN PROGRESS
-
-The goal of this repo is to implement RL algorithms and try to benchmarks them in the atari environment made by OpenAI.  
+The goal of this repo is to implement the DQN algorithm and try to benchmarks it in the atari environment made by OpenAI.  
 Made in **Python** with the framework **PyTorch**.
 
 **Value based:** 
 - [x] DQN [[1]](#references)
 - [x] Double DQN [[2]](#references)
-- [ ] Prioritised Experience Replay [[3]](#references)
-- [x] Dueling Network Architecture [[4]](#references)
-- [ ] Multi-step Returns [[5]](#references)
-- [ ] Distributional RL [[6]](#references)
-- [ ] Noisy Nets [[7]](#references)
-- [ ] Rainbow [[8]](#references)
-
-**Policy based:** 
-- [ ] A2C [[9]](#references)
-- [ ] A3C [[9]](#references)
-- [ ] PPO [[10]](#references)
-
-**Others:**
-- [ ] ICM [[11]](#references)
-- [ ] Deep Recurrent Q-Learning [[12]](#references)
+- [x] Dueling Network Architecture [[3]](#references)
 
 ----------------
 ## Setup 
@@ -77,13 +61,4 @@ References
 
 [1] [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)  
 [2] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461)  
-[3] [Prioritized Experience Replay](http://arxiv.org/abs/1511.05952)  
-[4] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
-[5] [Reinforcement Learning: An Introduction](http://www.incompleteideas.net/sutton/book/ebook/the-book.html)  
-[6] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)  
-[7] [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)  
-[8] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298)  
-[9] [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783)  
-[10] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)  
-[11] [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363)  
-[12] [Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/abs/1507.06527)  
+[3] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
