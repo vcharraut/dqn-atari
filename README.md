@@ -35,7 +35,7 @@ The recording are saved in playground/$env_name/recording
 ----------------
 ## Results
 
-![](results/openaigym.video.0.8356.video000000.mp4)
+![Video](https://github.com/valentin-cnt/dqn-atari/blob/56ca97564fc3cfcbf49f527b748094d34bd6beae/results/openaigym.video.0.8356.video000000.mp4)
 
 ----------------
 ## Acknowledgements
