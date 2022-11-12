@@ -1,7 +1,5 @@
 # DQN-Atari
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
 The goal of this repo is to implement the DQN algorithm and try to benchmarks it in the atari environment made by OpenAI.  
 Made in **Python** with the framework **PyTorch**.
 
